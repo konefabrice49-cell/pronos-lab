@@ -59,7 +59,9 @@ h2{font:700 24px var(--df);margin:14px 0 2px}
 <script>
 // ===== CONFIG API : à renseigner =====
 const CONFIG={API_BASE_URL:"/api"}; // la clé API reste sur le serveur (variable API_KEY de server.js)
-const LIVE=!new URLSearchParams(location.search).has("demo"); // ?demo = données de démonstration
+const Q=new URLSearchParams(location.search);
+const MODE=Q.has("demo")?"demo":Q.get("src")==="api"?"api":"csv"; // défaut : CSV gratuit ; ?src=api : API-Football ; ?demo : démonstration
+const LIVE=MODE!=="demo";
 
 // ===== COUCHE DONNÉES (séparée de l'interface et de l'analyse) =====
 // Format attendu : {id,comp,home,away,kickoff,st:{yc:[dom,ext],sh,fo,th,co},odds?:{yc,sh,fo,th,co}}
@@ -113,7 +115,31 @@ const Api={
    catch(e){st(`Quota ou limite atteinte : ${n} matchs chargés.`);return}}
   if(n)st("")}
 };
-const Provider=LIVE?Api:Demo;
+const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, fautes, cartons jaunes ; pas de touches)
+ DIVS:{E0:"Premier League",SP1:"La Liga",F1:"Ligue 1",D1:"Bundesliga",I1:"Serie A"},
+ async text(p){const r=await fetch("/csv"+p);if(!r.ok)throw new Error("HTTP "+r.status);return r.text()},
+ parse(t){const L=t.replace(/^\uFEFF/,"").trim().split(/\r?\n/),h=L[0].split(",");return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o})},
+ dt(d,t){const[a,b,c]=d.split("/"),[hh,mm]=(t||"12:00").split(":").map(Number);return new Date(c.length==2?2000+ +c:+c,+b-1,+a,hh,mm)},
+ async matches(push){
+  const st=t=>{const e=document.getElementById("st");if(e)e.textContent=t};
+  st("Chargement du calendrier…");
+  const now=new Date(),from=now.getTime()-3*36e5,lim=now.getTime()+4*864e5;
+  const fx=this.parse(await this.text("/fixtures.csv")).filter(x=>this.DIVS[x.Div]&&x.HomeTeam&&x.Date).map(x=>({...x,k:this.dt(x.Date,x.Time)}))
+   .filter(x=>x.k>=from&&x.k<=lim).sort((a,b)=>a.k-b.k).slice(0,MAX_MATCHES);
+  const y=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1,p2=n=>String(n%100).padStart(2,"0"),code=p2(y)+p2(y+1),res={};
+  for(const d of [...new Set(fx.map(x=>x.Div))]){st("Chargement des statistiques : "+this.DIVS[d]+"…");
+   res[d]=this.parse(await this.text(`/mmz4281/${code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}
+  const avg=(rows,team)=>{const g=rows.filter(r=>r.HomeTeam==team||r.AwayTeam==team).slice(-LAST_N);if(g.length<3)return null;
+   const a={yc:0,sh:0,fo:0,th:0,co:0};
+   for(const r of g){const h=r.HomeTeam==team,q=h?["HY","HS","HF","HC"]:["AY","AS","AF","AC"];a.yc+=+r[q[0]]||0;a.sh+=+r[q[1]]||0;a.fo+=+r[q[2]]||0;a.co+=+r[q[3]]||0}
+   return Object.fromEntries(Object.entries(a).map(([k,v])=>[k,v/g.length]))};
+  let n=0;
+  for(const x of fx){const h=avg(res[x.Div],x.HomeTeam),a=avg(res[x.Div],x.AwayTeam);if(!h||!a)continue;
+   const s={};for(const k of ["yc","sh","fo","th","co"])s[k]=[h[k],a[k]];
+   push({id:1000+n,comp:this.DIVS[x.Div],home:x.HomeTeam,away:x.AwayTeam,kickoff:x.k,st:s});n++}
+  st(n?"":"Aucun match trouvé : le calendrier est mis à jour le mardi et le vendredi.")}
+};
+const Provider={demo:Demo,api:Api,csv:Csv}[MODE];
 
 // ===== ÉTAT ET ANALYSE =====
 const CR=[{k:'yc',n:'Cartons jaunes',i:'🟨',lo:2,hi:8,s:.5},{k:'sh',n:'Tirs',i:'🎯',lo:14,hi:36,s:1},{k:'fo',n:'Fautes',i:'🚩',lo:16,hi:32,s:1},{k:'th',n:'Touches',i:'🙌',lo:30,hi:50,s:1},{k:'co',n:'Corners',i:'⛳',lo:6,hi:14,s:.5}];
@@ -156,11 +182,11 @@ function vM(){const b=base(),comps=[...new Set(ALL.map(m=>m.comp))];
  for(const c of [...new Set(b.map(m=>m.comp))]){h+=`<div class="comp">${c}</div>`;
   for(const m of b.filter(x=>x.comp==c)){const off=S.off.has(m.id);
    h+=`<div class="card m ${off?'off':''}" onclick="S.off[S.off.has(${m.id})?'delete':'add'](${m.id});go()"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div><div class="n">${m.home} – ${m.away}</div><span class="tag ${!off&&pass(m)?'ok':''}">${off?'Exclu':pass(m)?'Retenu':'Écarté'}</span></div>`}}
- return h+`<details class="card"><summary>Source des données : ${LIVE?'votre API':'démonstration'}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration. L'accès aux données est isolé dans les objets Demo et Api : changer d'API ne touche ni l'interface ni l'analyse.</p></details>`}
+ return h+`<details class="card"><summary>Source des données : ${{demo:'démonstration',api:'API-Football',csv:'football-data.co.uk (CSV gratuit)'}[MODE]}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration. L'accès aux données est isolé dans les objets Demo et Api : changer d'API ne touche ni l'interface ni l'analyse.</p></details>`}
 
 function vF(){const sc=scope();
  return `<h2>Filtres</h2><div class="sub">Moyenne combinée minimale des deux équipes, par critère.</div>`+CR.map(c=>{const f=S.F[c.k];
- return `<div class="card"><label><input type="checkbox" ${f.on?'checked':''} onchange="S.F.${c.k}.on=this.checked?1:0;go()"> ${c.i} ${c.n}</label>
+ return `<div class="card"><label><input type="checkbox" ${f.on?'checked':''} ${c.k=='th'&&MODE=='csv'?'disabled':''} onchange="S.F.${c.k}.on=this.checked?1:0;go()"> ${c.i} ${c.n}${c.k=='th'&&MODE=='csv'?' (indisponible avec cette source)':''}</label>
  <div class="row"><span class="sub">Minimum attendu</span><b class="big" id="v-${c.k}">${f1(f.min)}</b></div>
  <input type="range" min="${c.lo}" max="${c.hi}" step="${c.s}" value="${f.min}" ${f.on?'':'disabled'} oninput="mn('${c.k}',this.value)" aria-label="Minimum ${c.n}">
  <div class="sub" id="n-${c.k}">${f.on?sc.filter(m=>tot(m,c.k)>=f.min).length+' sur '+sc.length+' matchs correspondent':'Critère désactivé'}</div></div>`}).join('')+
@@ -178,7 +204,7 @@ function vP(){const{fl,tp}=calc();if(!fl.length)return empty('Aucun match analys
  return `<h2>Pronostics</h2>`+fl.map((m,i)=>{const t=tp[i],best=[...t].sort((a,b)=>b.p-a.p)[0];
  return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp}</div><b style="font-size:17px">${m.home} – ${m.away}</b>`+
  t.map(x=>`<div class="row"><div><b>${x===best?'★ ':''}Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Moyenne ${f1(x.mean)} · ${pc(x.p)} estimé${x.real?'':' · cote simulée'}</div></div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
- (`<div class="sub">Quand l'API ne fournit pas de cote (tirs, fautes, touches), elle est simulée à partir de la probabilité.</div>`)}
+ (`<div class="sub">Cote simulée à partir de la probabilité quand la source ne fournit pas la cote du marché (corners, cartons, tirs, fautes).</div>`)}
 
 function vG(){const{fl,cb}=calc();
  let h=`<h2>Pronostic global</h2><div class="card"><div class="row" style="margin:0"><label>Cote visée <input type="number" step=".05" min="1.2" max="10" value="${S.tgt}" onchange="S.tgt=+this.value||2;go()"></label><label>Écart toléré <input type="number" step=".05" min=".05" max="1" value="${S.tol}" onchange="S.tol=+this.value||.25;go()"></label></div></div>`;

@@ -20,6 +20,18 @@ function fetchApi(p) {                              // file d'attente : une requ
 }
 
 http.createServer(async (req, res) => {
+  if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h
+    const p = req.url.slice(4);
+    if (!/^\/(fixtures\.csv|mmz4281\/\d{4}\/(E0|SP1|F1|D1|I1)\.csv)$/.test(p)) { res.writeHead(403); return res.end(); }
+    const c = cache["csv:" + p], H = { "Content-Type": "text/csv; charset=utf-8" };
+    if (c && Date.now() - c.t < 6 * 36e5) { res.writeHead(200, H); return res.end(c.b); }
+    try {
+      const r = await fetch("https://www.football-data.co.uk" + p); if (!r.ok) throw new Error("HTTP " + r.status);
+      const b = new TextDecoder("latin1").decode(await r.arrayBuffer());
+      cache["csv:" + p] = { t: Date.now(), b }; fs.writeFile(FILE, JSON.stringify(cache), () => {});
+      res.writeHead(200, H); return res.end(b);
+    } catch (e) { res.writeHead(502); return res.end(String(e)); }
+  }
   if (req.url.startsWith("/api/")) {
     const p = req.url.slice(4), send = (s, b) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(b); };
     if (!KEY) return send(500, JSON.stringify({ errors: { cle: "API_KEY manquante côté serveur" } }));
