@@ -22,7 +22,7 @@ function fetchApi(p) {                              // file d'attente : une requ
 http.createServer(async (req, res) => {
   if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h
     const p = req.url.slice(4);
-    if (!/^\/(fixtures\.csv|mmz4281\/\d{4}\/(E0|SP1|F1|D1|I1)\.csv)$/.test(p)) { res.writeHead(403); return res.end(); }
+    if (!/^\/(fixtures\.csv|mmz4281\/\d{4}\/(E0|E1|E2|E3|EC|SC0|SC1|SC2|SC3|SP1|SP2|F1|F2|D1|D2|I1|I2|N1|P1|B1|T1|G1)\.csv)$/.test(p)) { res.writeHead(403); return res.end(); }
     const c = cache["csv:" + p], H = { "Content-Type": "text/csv; charset=utf-8" };
     if (c && Date.now() - c.t < 6 * 36e5) { res.writeHead(200, H); return res.end(c.b); }
     try {

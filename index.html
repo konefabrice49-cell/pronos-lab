@@ -116,7 +116,7 @@ const Api={
   if(n)st("")}
 };
 const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, fautes, cartons jaunes ; pas de touches)
- DIVS:{E0:"Premier League",SP1:"La Liga",F1:"Ligue 1",D1:"Bundesliga",I1:"Serie A"},
+ DIVS:{E0:"Premier League",SP1:"La Liga",F1:"Ligue 1",D1:"Bundesliga",I1:"Serie A",E1:"Championship",D2:"2. Bundesliga",SP2:"Segunda División",F2:"Ligue 2",I2:"Serie B",N1:"Eredivisie",P1:"Primeira Liga",B1:"Pro League belge",SC0:"Premiership écossaise",T1:"Süper Lig",G1:"Super League grecque",E2:"League One",E3:"League Two",SC1:"Championship écossaise",SC2:"League One écossaise",SC3:"League Two écossaise",EC:"National League"}, // ordre = priorité
  async text(p){const r=await fetch("/csv"+p);if(!r.ok)throw new Error("HTTP "+r.status);return r.text()},
  parse(t){const L=t.replace(/^\uFEFF/,"").trim().split(/\r?\n/),h=L[0].split(",");return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o})},
  dt(d,t){const[a,b,c]=d.split("/"),[hh,mm]=(t||"12:00").split(":").map(Number);return new Date(c.length==2?2000+ +c:+c,+b-1,+a,hh,mm)},
@@ -125,10 +125,10 @@ const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, faut
   st("Chargement du calendrier…");
   const now=new Date(),from=now.getTime()-3*36e5,lim=now.getTime()+4*864e5;
   const fx=this.parse(await this.text("/fixtures.csv")).filter(x=>this.DIVS[x.Div]&&x.HomeTeam&&x.Date).map(x=>({...x,k:this.dt(x.Date,x.Time)}))
-   .filter(x=>x.k>=from&&x.k<=lim).sort((a,b)=>a.k-b.k).slice(0,MAX_MATCHES);
+   .filter(x=>x.k>=from&&x.k<=lim).sort((a,b)=>{const o=Object.keys(this.DIVS);return o.indexOf(a.Div)-o.indexOf(b.Div)||a.k-b.k}).slice(0,MAX_MATCHES);
   const y=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1,p2=n=>String(n%100).padStart(2,"0"),code=p2(y)+p2(y+1),res={};
   for(const d of [...new Set(fx.map(x=>x.Div))]){st("Chargement des statistiques : "+this.DIVS[d]+"…");
-   res[d]=this.parse(await this.text(`/mmz4281/${code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}
+   try{res[d]=this.parse(await this.text(`/mmz4281/${code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}catch(e){res[d]=[]}}
   const avg=(rows,team)=>{const g=rows.filter(r=>r.HomeTeam==team||r.AwayTeam==team).slice(-LAST_N);if(g.length<3)return null;
    const a={yc:0,sh:0,fo:0,th:0,co:0};
    for(const r of g){const h=r.HomeTeam==team,q=h?["HY","HS","HF","HC"]:["AY","AS","AF","AC"];a.yc+=+r[q[0]]||0;a.sh+=+r[q[1]]||0;a.fo+=+r[q[2]]||0;a.co+=+r[q[3]]||0}
