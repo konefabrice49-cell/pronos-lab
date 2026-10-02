@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pronos Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2fa;--card:#fff;--ink:#0b1633;--mut:#5a6788;--line:#dbe2f1;--acc:#2f6bff;--red:#d92d3a;--ok:#12994a;--sf:'Barlow',system-ui,sans-serif;--df:'Barlow Condensed','Arial Narrow',sans-serif}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070d22;--card:#0f1a3a;--ink:#e8edfb;--mut:#8d9ac0;--line:#1e2c55;--acc:#5b93ff;--red:#ff5560;--ok:#34d27b}}
+:root[data-theme="dark"]{--bg:#070d22;--card:#0f1a3a;--ink:#e8edfb;--mut:#8d9ac0;--line:#1e2c55;--acc:#5b93ff;--red:#ff5560;--ok:#34d27b}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--sf)}
+main{max-width:720px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font:700 32px/1 var(--df);margin:0}
+.sub{color:var(--mut);font-size:13px}
+.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-bottom:1px solid var(--line)}
+.rail button{all:unset;cursor:pointer;text-align:center;padding:10px 2px 8px;border-bottom:3px solid transparent;border-right:1px solid var(--line)}
+.rail button:focus-visible,.chip:focus-visible{outline:2px solid var(--acc)}
+.rail b{display:block;font:700 26px/1 var(--df)}
+.rail span{font-size:11.5px;color:var(--mut)}
+.rail .on{border-bottom-color:var(--red)}
+.rail .on b{color:var(--red)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
+.comp{font:700 21px var(--df);color:var(--red);margin:18px 0 4px}
+.m{display:flex;align-items:center;gap:10px;cursor:pointer}
+.m .t{width:56px;color:var(--mut);font-size:12.5px;line-height:1.3}
+.m .n{flex:1;font-weight:600}
+.off{opacity:.45}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:6px 0}
+.chip{flex:none;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:500 14px var(--sf);cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--acc)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}
+.big{font:700 30px/1 var(--df)}
+.key{border-left:3px solid var(--red);padding-left:10px;margin:8px 0}
+input[type=range]{width:100%;accent-color:var(--acc)}
+input[type=number]{width:84px;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 15px var(--sf)}
+label{display:flex;align-items:center;gap:8px;font-weight:600}
+summary{cursor:pointer;font-weight:600}
+h2{font:700 24px var(--df);margin:14px 0 2px}
+</style>
+</head>
+<body>
+<nav class="rail" id="rail" aria-label="Étapes"></nav>
+<main>
+<header><div><h1>Pronos Lab</h1><div class="sub">Matchs, filtres, analyse, pronostics, combiné</div></div><button class="chip" onclick="th()" aria-label="Changer de thème">◐</button></header>
+<div class="sub" id="st"></div>
+<div id="app"></div>
+<p class="sub">Les probabilités sont des estimations statistiques, jamais des certitudes. Jouez avec modération.</p>
+</main>
+<script>
+// ===== CONFIG API : à renseigner =====
+const CONFIG={API_BASE_URL:"/api"}; // la clé API reste sur le serveur (variable API_KEY de server.js)
+const LIVE=!new URLSearchParams(location.search).has("demo"); // ?demo = données de démonstration
+
+// ===== COUCHE DONNÉES (séparée de l'interface et de l'analyse) =====
+// Format attendu : {id,comp,home,away,kickoff,st:{yc:[dom,ext],sh,fo,th,co},odds?:{yc,sh,fo,th,co}}
+const D=(o,h,mi)=>{const d=new Date();d.setDate(d.getDate()+o);d.setHours(h,mi,0,0);return d};
+const M=(id,comp,home,away,k,s)=>({id,comp,home,away,kickoff:k,st:{yc:s[0],sh:s[1],fo:s[2],th:s[3],co:s[4]}});
+const Demo={async matches(){return[
+M(1,'Premier League','Arsenal','Chelsea',D(0,17,30),[[1.7,2.3],[15,12],[10,12],[20,19],[6.1,4.8]]),
+M(2,'Premier League','Newcastle','Everton',D(1,16,0),[[2.0,2.4],[14,11.5],[11.5,12.5],[21,20],[5.8,4.9]]),
+M(3,'La Liga','Real Madrid','Séville',D(1,21,0),[[1.8,2.6],[16,11],[11,13.5],[19,21],[6.4,4.4]]),
+M(4,'La Liga','FC Barcelone','Valence',D(2,18,30),[[1.5,2.4],[17,10],[10,13],[18,22],[6.0,4.6]]),
+M(5,'Ligue 1','PSG','Marseille',D(0,21,0),[[1.9,2.6],[17,12],[11,13.5],[19,20],[6.6,4.9]]),
+M(6,'Ligue 1','Lyon','Monaco',D(1,19,0),[[1.8,1.7],[13,13],[12,11],[21,20],[5.2,5.0]]),
+M(7,'Bundesliga','Bayern','Dortmund',D(2,18,30),[[1.6,2.5],[18,13],[9.5,12],[17,20],[6.8,5.3]]),
+M(8,'Bundesliga','Leverkusen','Leipzig',D(3,15,30),[[1.9,2.0],[15,13],[11,12],[20,21],[5.9,5.2]]),
+M(9,'Serie A','Inter','Juventus',D(0,20,45),[[2.2,2.5],[13,11],[12.5,13.8],[20,21],[5.6,4.5]]),
+M(10,'Serie A','Milan','Naples',D(1,18,0),[[2.3,2.1],[12,14],[12,12.5],[22,19],[5.0,5.5]]),
+M(11,'Ligue des champions','Atlético','Benfica',D(3,21,0),[[2.6,2.3],[11,12],[13,12],[19,21],[4.8,5.2]]),
+M(12,'Europa League','Roma','Villarreal',D(2,21,0),[[2.1,2.3],[12,11],[12.5,12],[20,19],[5.3,4.7]])]}};
+const LEAGUES={39:"Premier League",140:"La Liga",61:"Ligue 1",78:"Bundesliga",135:"Serie A",2:"Ligue des champions",3:"Europa League"};
+const LAST_N=8,MAX_MATCHES=10,DAYS_AHEAD=1;
+const Api={
+ async get(p){const r=await fetch(CONFIG.API_BASE_URL+p);const j=await r.json().catch(()=>({}));
+  if(!r.ok||(j.errors&&Object.keys(j.errors).length))throw new Error(Object.values(j.errors||{})[0]||"HTTP "+r.status);return j.response},
+ stat(l,t){const s=l.find(x=>x.type===t);return parseFloat(s&&s.value)||0},
+ async teamAvg(id){ // 2 requêtes par équipe : derniers matchs, puis leurs statistiques (ids=a-b-c)
+  const prev=await this.get(`/fixtures?team=${id}&last=${LAST_N}`);
+  const det=await this.get(`/fixtures?ids=${prev.map(f=>f.fixture.id).join("-")}`);
+  const a={yc:0,sh:0,fo:0,th:0,co:0};let n=0;
+  for(const d of det){const t=(d.statistics||[]).find(x=>x.team.id===id);if(!t)continue;n++;
+   a.yc+=this.stat(t.statistics,"Yellow Cards");a.sh+=this.stat(t.statistics,"Total Shots");a.fo+=this.stat(t.statistics,"Fouls");
+   a.co+=this.stat(t.statistics,"Corner Kicks");a.th+=this.stat(t.statistics,"Throw-ins")}
+  return Object.fromEntries(Object.entries(a).map(([k,v])=>[k,n?v/n:0]))},
+ async odds(id){ // vraies cotes « Plus de X » : corners et cartons ; les autres critères restent simulés
+  try{const r=await this.get("/odds?fixture="+id),bk=(r[0]&&r[0].bookmakers)||[],out={};
+   const pick=(k,re)=>{for(const b of bk){const bet=b.bets.find(x=>re.test(x.name)&&/over|under|total/i.test(x.name)&&!/half|asian|home|away|team|race|handicap|exact|odd|red/i.test(x.name));
+    if(!bet)continue;const o={};for(const v of bet.values){const m=/^Over\s+([\d.]+)$/i.exec(v.value);if(m)o[m[1]]=parseFloat(v.odd)}
+    if(Object.keys(o).length){out[k]=o;return}}};
+   pick("co",/corner/i);pick("yc",/card/i);return out}catch(e){return{}}},
+ async matches(push){
+  const st=t=>{const e=document.getElementById("st");if(e)e.textContent=t};
+  let fx=[];
+  for(let i=0;i<=DAYS_AHEAD;i++){const d=new Date();d.setDate(d.getDate()+i);st("Recherche des matchs…");
+   fx=fx.concat((await this.get("/fixtures?date="+d.toISOString().slice(0,10))).filter(x=>LEAGUES[x.league.id]))}
+  fx=fx.slice(0,MAX_MATCHES);if(!fx.length)st("Aucun match trouvé dans ces compétitions.");
+  let n=0;
+  for(const x of fx){
+   try{st(`Analyse du match ${n+1}/${fx.length} (le premier chargement prend quelques minutes)…`);
+    const h=await this.teamAvg(x.teams.home.id),a=await this.teamAvg(x.teams.away.id),odds=await this.odds(x.fixture.id),stt={};
+    for(const k of ["yc","sh","fo","th","co"])stt[k]=[h[k],a[k]];
+    push({id:x.fixture.id,comp:LEAGUES[x.league.id],home:x.teams.home.name,away:x.teams.away.name,kickoff:new Date(x.fixture.date),st:stt,odds});n++}
+   catch(e){st(`Quota ou limite atteinte : ${n} matchs chargés.`);return}}
+  if(n)st("")}
+};
+const Provider=LIVE?Api:Demo;
+
+// ===== ÉTAT ET ANALYSE =====
+const CR=[{k:'yc',n:'Cartons jaunes',i:'🟨',lo:2,hi:8,s:.5},{k:'sh',n:'Tirs',i:'🎯',lo:14,hi:36,s:1},{k:'fo',n:'Fautes',i:'🚩',lo:16,hi:32,s:1},{k:'th',n:'Touches',i:'🙌',lo:30,hi:50,s:1},{k:'co',n:'Corners',i:'⛳',lo:6,hi:14,s:.5}];
+let ALL=[],S={v:'m',r:'today',c:'all',off:new Set(),tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
+const tot=(m,k)=>m.st[k][0]+m.st[k][1];
+const same=(a,b)=>a.toDateString()===b.toDateString();
+const base=()=>ALL.filter(m=>(S.c=='all'||m.comp==S.c)&&(S.r=='all'||(S.r=='today')===same(m.kickoff,new Date())));
+const scope=()=>base().filter(m=>!S.off.has(m.id));
+const pass=m=>CR.every(c=>!S.F[c.k].on||tot(m,c.k)>=S.F[c.k].min);
+const pOver=(l,mu)=>{let s=0,t=Math.exp(-mu);for(let i=0;i<=Math.floor(l);i++){s+=t;t*=mu/(i+1)}return 1-s};
+const tipsOf=m=>CR.filter(c=>S.F[c.k].on).map(c=>{const mean=tot(m,c.k);let line=Math.floor(mean-.35*Math.sqrt(mean))+.5,real=false,odd;
+ const ol=m.odds&&m.odds[c.k];
+ if(ol){const ls=Object.keys(ol).map(Number);if(ls.length){line=ls.reduce((a,b)=>Math.abs(b-line)<Math.abs(a-line)?b:a);odd=ol[line];real=true}}
+ const p=pOver(line,mean);
+ return{m,c,mean,line,p,real,odd:real?odd:Math.max(1.05,Math.round(.93/p*100)/100)}});
+function combos(tp){const res=[];(function rec(i,cur){
+ if(cur.length>=2){const o=cur.reduce((a,t)=>a*t.odd,1);if(Math.abs(o-S.tgt)<=S.tol)res.push({legs:[...cur],odd:o,p:cur.reduce((a,t)=>a*t.p,1)})}
+ if(cur.length==3)return;
+ for(let j=i;j<tp.length;j++)for(const t of tp[j]){cur.push(t);rec(j+1,cur);cur.pop()}})(0,[]);
+ return res.sort((a,b)=>b.p-a.p).slice(0,3)}
+const calc=()=>{const sc=scope(),fl=sc.filter(pass),tp=fl.map(tipsOf);return{sc,fl,tp,cb:combos(tp)}};
+
+// ===== AFFICHAGE =====
+const $=s=>document.querySelector(s);
+const f2=n=>n.toFixed(2).replace('.',','),f1=n=>n.toFixed(1).replace('.',',');
+const hm=d=>d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const dl=d=>d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+const pc=p=>Math.round(p*100)+' %';
+const empty=t=>`<div class="card">${t}<div class="row"><button class="chip" onclick="go('f')">Ajuster les filtres</button></div></div>`;
+
+function rail(){const{sc,fl,tp,cb}=calc();
+ const v=[sc.length,fl.length,fl.length,tp.flat().length,cb[0]?f2(cb[0].odd):'–'];
+ $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')"><b>${v[i]}</b><span>${x[1]}</span></button>`).join('')}
+
+function vM(){const b=base(),comps=[...new Set(ALL.map(m=>m.comp))];
+ const rg=[['today','Aujourd\'hui'],['up','À venir'],['all','Tous']].map(r=>`<button class="chip ${S.r==r[0]?'on':''}" onclick="S.r='${r[0]}';go()">${r[1]}</button>`).join('');
+ const cp=['all',...comps].map(c=>`<button class="chip ${S.c==c?'on':''}" onclick="S.c=this.dataset.c;go()" data-c="${c}">${c=='all'?'Toutes les compétitions':c}</button>`).join('');
+ let h=`<div class="chips">${rg}</div><div class="chips">${cp}</div><div class="sub">Touchez un match pour l'exclure ou le réintégrer.</div>`;
+ if(!b.length)h+=`<div class="card">Aucun match sur cette période. Essayez « Tous ».</div>`;
+ for(const c of [...new Set(b.map(m=>m.comp))]){h+=`<div class="comp">${c}</div>`;
+  for(const m of b.filter(x=>x.comp==c)){const off=S.off.has(m.id);
+   h+=`<div class="card m ${off?'off':''}" onclick="S.off[S.off.has(${m.id})?'delete':'add'](${m.id});go()"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div><div class="n">${m.home} – ${m.away}</div><span class="tag ${!off&&pass(m)?'ok':''}">${off?'Exclu':pass(m)?'Retenu':'Écarté'}</span></div>`}}
+ return h+`<details class="card"><summary>Source des données : ${LIVE?'votre API':'démonstration'}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration. L'accès aux données est isolé dans les objets Demo et Api : changer d'API ne touche ni l'interface ni l'analyse.</p></details>`}
+
+function vF(){const sc=scope();
+ return `<h2>Filtres</h2><div class="sub">Moyenne combinée minimale des deux équipes, par critère.</div>`+CR.map(c=>{const f=S.F[c.k];
+ return `<div class="card"><label><input type="checkbox" ${f.on?'checked':''} onchange="S.F.${c.k}.on=this.checked?1:0;go()"> ${c.i} ${c.n}</label>
+ <div class="row"><span class="sub">Minimum attendu</span><b class="big" id="v-${c.k}">${f1(f.min)}</b></div>
+ <input type="range" min="${c.lo}" max="${c.hi}" step="${c.s}" value="${f.min}" ${f.on?'':'disabled'} oninput="mn('${c.k}',this.value)" aria-label="Minimum ${c.n}">
+ <div class="sub" id="n-${c.k}">${f.on?sc.filter(m=>tot(m,c.k)>=f.min).length+' sur '+sc.length+' matchs correspondent':'Critère désactivé'}</div></div>`}).join('')+
+ `<div class="card"><b id="fres">${sc.filter(pass).length} matchs</b> envoyés automatiquement vers l'analyse.</div>`}
+function mn(k,v){S.F[k].min=+v;const sc=scope();$('#v-'+k).textContent=f1(+v);$('#n-'+k).textContent=sc.filter(m=>tot(m,k)>=+v).length+' sur '+sc.length+' matchs correspondent';$('#fres').textContent=sc.filter(pass).length+' matchs';rail()}
+
+function vA(){const{fl}=calc();if(!fl.length)return empty('Aucun match retenu par vos filtres.');
+ return `<h2>Analyse</h2>`+fl.map(m=>{const tp=tipsOf(m);if(!tp.length)return`<div class="card">${m.home} – ${m.away} : activez au moins un critère.</div>`;
+ const k=[...tp].sort((a,b)=>b.p-a.p)[0];
+ return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp} · ${dl(m.kickoff)} ${hm(m.kickoff)}</div><b style="font-size:17px">${m.home} – ${m.away}</b>
+ <div class="key">Point clé : ${k.c.n.toLowerCase()}, ${f1(k.mean)} attendus, ${pc(k.p)} de chances de dépasser ${f1(k.line)}.</div>`+
+ tp.map(t=>`<div style="margin-top:10px"><div class="row" style="margin:0"><span>${t.c.i} ${t.c.n}</span><span class="sub">${m.home} ${f1(m.st[t.c.k][0])} + ${m.away} ${f1(m.st[t.c.k][1])} = <b>${f1(t.mean)}</b></span></div><div class="bar"><i style="width:${t.p*100}%"></i></div><div class="sub">Plus de ${f1(t.line)} : ${pc(t.p)}</div></div>`).join('')+`</div>`}).join('')}
+
+function vP(){const{fl,tp}=calc();if(!fl.length)return empty('Aucun match analysé.');
+ return `<h2>Pronostics</h2>`+fl.map((m,i)=>{const t=tp[i],best=[...t].sort((a,b)=>b.p-a.p)[0];
+ return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp}</div><b style="font-size:17px">${m.home} – ${m.away}</b>`+
+ t.map(x=>`<div class="row"><div><b>${x===best?'★ ':''}Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Moyenne ${f1(x.mean)} · ${pc(x.p)} estimé${x.real?'':' · cote simulée'}</div></div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
+ (`<div class="sub">Quand l'API ne fournit pas de cote (tirs, fautes, touches), elle est simulée à partir de la probabilité.</div>`)}
+
+function vG(){const{fl,cb}=calc();
+ let h=`<h2>Pronostic global</h2><div class="card"><div class="row" style="margin:0"><label>Cote visée <input type="number" step=".05" min="1.2" max="10" value="${S.tgt}" onchange="S.tgt=+this.value||2;go()"></label><label>Écart toléré <input type="number" step=".05" min=".05" max="1" value="${S.tol}" onchange="S.tol=+this.value||.25;go()"></label></div></div>`;
+ if(fl.length<2)return h+empty('Il faut au moins 2 matchs analysés.');
+ if(!cb.length)return h+empty('Aucune combinaison de 2 ou 3 matchs ne correspond à la cote visée.');
+ return h+cb.map((c,i)=>`<div class="card"><div class="row" style="margin:0"><b style="font-size:17px">${i==0?'★ ':''}Combinaison ${i+1}</b><div class="big" style="color:var(--red)">${f2(c.odd)}</div></div>`+
+ c.legs.map(t=>`<div class="row"><div><b>${t.m.home} – ${t.m.away}</b><div class="sub">Plus de ${f1(t.line)} ${t.c.n.toLowerCase()} · moyenne ${f1(t.mean)} · ${pc(t.p)}</div></div><b class="big" style="font-size:22px">${f2(t.odd)}</b></div>`).join('')+
+ `<div class="key">Synthèse : ${c.legs.length} matchs, cote totale ${f2(c.odd)}, probabilité conjointe estimée à ${pc(c.p)}. Chaque sélection part d'une moyenne combinée supérieure à sa ligne.</div></div>`).join('')}
+
+function go(v){if(v){S.v=v;scrollTo(0,0)}rail();$('#app').innerHTML={m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]()}
+function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
+go();
+(async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;go()}
+catch(e){$('#st').textContent='';go();$('#app').insertAdjacentHTML('afterbegin',`<div class="card">Impossible de charger les données (${e.message}). Vérifiez la clé côté serveur ou <a href="?demo" style="color:var(--acc)">ouvrez le mode démonstration</a>.</div>`)}})();
+</script>
+</body>
+</html>
