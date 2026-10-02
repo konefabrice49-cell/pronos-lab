@@ -118,7 +118,7 @@ const Api={
 const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, fautes, cartons jaunes ; pas de touches)
  DIVS:{E0:"Premier League",SP1:"La Liga",F1:"Ligue 1",D1:"Bundesliga",I1:"Serie A",E1:"Championship",D2:"2. Bundesliga",SP2:"Segunda División",F2:"Ligue 2",I2:"Serie B",N1:"Eredivisie",P1:"Primeira Liga",B1:"Pro League belge",SC0:"Premiership écossaise",T1:"Süper Lig",G1:"Super League grecque",E2:"League One",E3:"League Two",SC1:"Championship écossaise",SC2:"League One écossaise",SC3:"League Two écossaise",EC:"National League"}, // ordre = priorité
  async text(p){const r=await fetch("/csv"+p);if(!r.ok)throw new Error("HTTP "+r.status);return r.text()},
- parse(t){const L=t.replace(/^\uFEFF/,"").trim().split(/\r?\n/),h=L[0].split(",");return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o})},
+ parse(t){const L=t.replace(/^(\uFEFF|ï»¿)/,"").trim().split(/\r?\n/),h=L[0].split(",");return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o})},
  dt(d,t){const[a,b,c]=d.split("/"),[hh,mm]=(t||"12:00").split(":").map(Number);return new Date(c.length==2?2000+ +c:+c,+b-1,+a,hh,mm)},
  async matches(push){
   const st=t=>{const e=document.getElementById("st");if(e)e.textContent=t};
