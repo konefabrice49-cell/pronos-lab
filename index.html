@@ -14,16 +14,17 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*:before,*:after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--sf)}
-main{max-width:720px;margin:0 auto;padding:14px 14px 40px}
+main{max-width:720px;margin:0 auto;padding:14px 14px 110px}
 header{display:flex;justify-content:space-between;align-items:center;gap:10px}
 h1{font:700 32px/1 var(--df);margin:0}
 .sub{color:var(--mut);font-size:13px}
-.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-bottom:1px solid var(--line)}
-.rail button{all:unset;cursor:pointer;text-align:center;padding:10px 2px 8px;border-bottom:3px solid transparent;border-right:1px solid var(--line)}
+.rail{position:fixed;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.rail button{all:unset;cursor:pointer;text-align:center;padding:8px 2px 7px;border-top:3px solid transparent;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:1px}
 .rail button:focus-visible,.chip:focus-visible{outline:2px solid var(--acc)}
-.rail b{display:block;font:700 26px/1 var(--df)}
-.rail span{font-size:11.5px;color:var(--mut)}
-.rail .on{border-bottom-color:var(--red)}
+.rail .ic{display:flex;align-items:center;gap:4px}
+.rail b{font:700 17px/1 var(--df);color:var(--ink)}
+.rail span{font-size:11.5px}
+.rail .on{border-top-color:var(--red);color:var(--red)}
 .rail .on b{color:var(--red)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
 .comp{font:700 21px var(--df);color:var(--red);margin:18px 0 4px}
@@ -46,6 +47,8 @@ input[type=number]{width:84px;padding:6px;border-radius:8px;border:1px solid var
 label{display:flex;align-items:center;gap:8px;font-weight:600}
 summary{cursor:pointer;font-weight:600}
 h2{font:700 24px var(--df);margin:14px 0 2px}
+.lg{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 11px var(--df);color:#fff;flex:none;object-fit:contain;vertical-align:middle}
+.tm{display:flex;align-items:center;gap:8px;font-weight:600;margin:2px 0}
 </style>
 </head>
 <body>
@@ -111,7 +114,7 @@ const Api={
    try{st(`Analyse du match ${n+1}/${fx.length} (le premier chargement prend quelques minutes)…`);
     const h=await this.teamAvg(x.teams.home.id),a=await this.teamAvg(x.teams.away.id),odds=await this.odds(x.fixture.id),stt={};
     for(const k of ["yc","sh","fo","th","co"])stt[k]=[h[k],a[k]];
-    push({id:x.fixture.id,comp:LEAGUES[x.league.id],home:x.teams.home.name,away:x.teams.away.name,kickoff:new Date(x.fixture.date),st:stt,odds});n++}
+    push({id:x.fixture.id,comp:LEAGUES[x.league.id],home:x.teams.home.name,away:x.teams.away.name,homeLogo:x.teams.home.logo,awayLogo:x.teams.away.logo,kickoff:new Date(x.fixture.date),st:stt,odds});n++}
    catch(e){st(`Quota ou limite atteinte : ${n} matchs chargés.`);return}}
   if(n)st("")}
 };
@@ -143,7 +146,7 @@ const Provider={demo:Demo,api:Api,csv:Csv}[MODE];
 
 // ===== ÉTAT ET ANALYSE =====
 const CR=[{k:'yc',n:'Cartons jaunes',i:'🟨',lo:2,hi:8,s:.5},{k:'sh',n:'Tirs',i:'🎯',lo:14,hi:36,s:1},{k:'fo',n:'Fautes',i:'🚩',lo:16,hi:32,s:1},{k:'th',n:'Touches',i:'🙌',lo:30,hi:50,s:1},{k:'co',n:'Corners',i:'⛳',lo:6,hi:14,s:.5}];
-let ALL=[],S={v:'m',r:'today',c:'all',off:new Set(),tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
+let ALL=[],S={fc:null,P:{f:{},a:{}},v:'m',r:'today',c:'all',off:new Set(),tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
 const tot=(m,k)=>m.st[k][0]+m.st[k][1];
 const same=(a,b)=>a.toDateString()===b.toDateString();
 const base=()=>ALL.filter(m=>(S.c=='all'||m.comp==S.c)&&(S.r=='all'||(S.r=='today')===same(m.kickoff,new Date())));
@@ -172,8 +175,30 @@ const empty=t=>`<div class="card">${t}<div class="row"><button class="chip" oncl
 
 function rail(){const{sc,fl,tp,cb}=calc();
  const v=[sc.length,fl.length,fl.length,tp.flat().length,cb[0]?f2(cb[0].odd):'–'];
- $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')"><b>${v[i]}</b><span>${x[1]}</span></button>`).join('')}
+ const IC={m:'<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 5h-5L8 10z"/>',f:'<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',a:'<path d="M3 20h5v-5h5v-5h5V5h3"/>',p:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',g:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8"/>'};
+ $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')" aria-label="${x[1]}"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[x[0]]}</svg><b>${v[i]}</b></div><span>${x[1]}</span></button>`).join('')}
 
+try{Object.assign(S.P,JSON.parse(localStorage.getItem("pl")||"{}"))}catch(e){}
+const sp=(t,k,v)=>{S.P[t][k]=v;try{localStorage.setItem("pl",JSON.stringify(S.P))}catch(e){}};
+const inR=m=>S.r=='all'||(S.r=='today')===same(m.kickoff,new Date());
+const esc=x=>(x||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const mono=n=>{const w=n.replace(/[^A-Za-zÀ-ÿ ]/g,' ').trim().split(/\s+/);const t=(w.length>1?w[0][0]+w[1][0]:n.slice(0,3)).toUpperCase();let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return`<span class="lg" style="background:hsl(${h} 45% 32%)">${esc(t)}</span>`};
+const lg=(n,u)=>u?`<img class="lg" src="${esc(u)}" alt="${esc(n)}" loading="lazy" onerror="this.outerHTML=mono(this.alt)">`:mono(n);
+const two=m=>`<div class="n"><div class="tm">${lg(m.home,m.homeLogo)}${m.home}</div><div class="tm">${lg(m.away,m.awayLogo)}${m.away}</div></div>`;
+const vs=m=>`${lg(m.home,m.homeLogo)} <b style="font-size:17px">${m.home} – ${m.away}</b> ${lg(m.away,m.awayLogo)}`;
+const pbox=(t,k)=>`<textarea rows="3" placeholder="Colle ici ton prompt de ${t=='f'?'filtration':'analyse'} pour ${CR.find(c=>c.k==k).n}" oninput="sp('${t}','${k}',this.value)" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 14px var(--sf)">${esc(S.P[t][k])}</textarea><button class="chip" style="margin-top:6px" onclick="cp('${t}','${k}')">Copier prompt + matchs</button>`;
+function cp(t,k){const c=CR.find(x=>x.k==k),ms=t=='f'?ALL.filter(m=>inR(m)&&!S.off.has(m.id)):calc().fl;
+ const txt=(S.P[t][k]||"").trim()+"\n\nMatchs ("+c.n+") :\n"+ms.map(m=>`${m.comp} : ${m.home} - ${m.away} | ${m.home} ${f1(m.st[k][0])}, ${m.away} ${f1(m.st[k][1])}, total ${f1(tot(m,k))}`).join("\n");
+ (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert("Copié : colle-le dans Claude."),()=>alert("Copie impossible sur ce navigateur."))}
+function selAll(on){ALL.filter(m=>inR(m)&&m.comp==S.fc).forEach(m=>on?S.off.delete(m.id):S.off.add(m.id));go()}
+function vF(){
+ const rg=[['today',"Aujourd'hui"],['up','À venir'],['all','Tous']].map(r=>`<button class="chip ${S.r==r[0]?'on':''}" onclick="S.r='${r[0]}';S.fc=null;go()">${r[1]}</button>`).join('');
+ const b=ALL.filter(inR);
+ if(S.fc){return `<div class="chips">${rg}</div><div class="chips"><button class="chip" onclick="S.fc=null;go()">← Championnats</button><button class="chip" onclick="selAll(1)">Tout garder</button><button class="chip" onclick="selAll(0)">Tout laisser</button></div><div class="comp">${S.fc}</div><div class="sub">Touchez un match pour le garder ou le laisser. Les matchs laissés sont ignorés par l'analyse.</div>`+
+  b.filter(m=>m.comp==S.fc).map(m=>{const off=S.off.has(m.id);return `<div class="card m ${off?'off':''}" onclick="S.off[S.off.has(${m.id})?'delete':'add'](${m.id});go()"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div>${two(m)}<span class="tag ${off?'':'ok'}">${off?'Laissé':'Gardé'}</span></div>`}).join('')}
+ const cs=[...new Set(b.map(m=>m.comp))];
+ return `<h2>Championnats</h2><div class="chips">${rg}</div><div class="sub">Touchez un championnat pour choisir ses matchs.</div>`+
+  (cs.length?cs.map(c=>{const ms=b.filter(m=>m.comp==c),k=ms.filter(m=>!S.off.has(m.id)).length;return `<div class="card m" data-c="${c}" onclick="S.fc=this.dataset.c;go()"><div class="n" style="color:var(--red)">${c}</div><span class="tag ${k?'ok':''}">${k}/${ms.length} matchs ›</span></div>`}).join(''):`<div class="card">Aucun match sur cette période. Essayez « Tous ».</div>`)+crit()}
 function vM(){const b=base(),comps=[...new Set(ALL.map(m=>m.comp))];
  const rg=[['today','Aujourd\'hui'],['up','À venir'],['all','Tous']].map(r=>`<button class="chip ${S.r==r[0]?'on':''}" onclick="S.r='${r[0]}';go()">${r[1]}</button>`).join('');
  const cp=['all',...comps].map(c=>`<button class="chip ${S.c==c?'on':''}" onclick="S.c=this.dataset.c;go()" data-c="${c}">${c=='all'?'Toutes les compétitions':c}</button>`).join('');
@@ -181,28 +206,28 @@ function vM(){const b=base(),comps=[...new Set(ALL.map(m=>m.comp))];
  if(!b.length)h+=`<div class="card">Aucun match sur cette période. Essayez « Tous ».</div>`;
  for(const c of [...new Set(b.map(m=>m.comp))]){h+=`<div class="comp">${c}</div>`;
   for(const m of b.filter(x=>x.comp==c)){const off=S.off.has(m.id);
-   h+=`<div class="card m ${off?'off':''}" onclick="S.off[S.off.has(${m.id})?'delete':'add'](${m.id});go()"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div><div class="n">${m.home} – ${m.away}</div><span class="tag ${!off&&pass(m)?'ok':''}">${off?'Exclu':pass(m)?'Retenu':'Écarté'}</span></div>`}}
+   h+=`<div class="card m ${off?'off':''}" onclick="S.off[S.off.has(${m.id})?'delete':'add'](${m.id});go()"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div>${two(m)}<span class="tag ${!off&&pass(m)?'ok':''}">${off?'Exclu':pass(m)?'Retenu':'Écarté'}</span></div>`}}
  return h+`<details class="card"><summary>Source des données : ${{demo:'démonstration',api:'API-Football',csv:'football-data.co.uk (CSV gratuit)'}[MODE]}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration. L'accès aux données est isolé dans les objets Demo et Api : changer d'API ne touche ni l'interface ni l'analyse.</p></details>`}
 
-function vF(){const sc=scope();
- return `<h2>Filtres</h2><div class="sub">Moyenne combinée minimale des deux équipes, par critère.</div>`+CR.map(c=>{const f=S.F[c.k];
+function crit(){const sc=scope();
+ return `<h2>Critères par marché</h2><div class="sub">Moyenne combinée minimale des deux équipes, et ton prompt de filtration pour chaque marché.</div>`+CR.map(c=>{const f=S.F[c.k];
  return `<div class="card"><label><input type="checkbox" ${f.on?'checked':''} ${c.k=='th'&&MODE=='csv'?'disabled':''} onchange="S.F.${c.k}.on=this.checked?1:0;go()"> ${c.i} ${c.n}${c.k=='th'&&MODE=='csv'?' (indisponible avec cette source)':''}</label>
  <div class="row"><span class="sub">Minimum attendu</span><b class="big" id="v-${c.k}">${f1(f.min)}</b></div>
  <input type="range" min="${c.lo}" max="${c.hi}" step="${c.s}" value="${f.min}" ${f.on?'':'disabled'} oninput="mn('${c.k}',this.value)" aria-label="Minimum ${c.n}">
- <div class="sub" id="n-${c.k}">${f.on?sc.filter(m=>tot(m,c.k)>=f.min).length+' sur '+sc.length+' matchs correspondent':'Critère désactivé'}</div></div>`}).join('')+
+ <div class="sub" id="n-${c.k}">${f.on?sc.filter(m=>tot(m,c.k)>=f.min).length+' sur '+sc.length+' matchs correspondent':'Critère désactivé'}</div>${pbox('f',c.k)}</div>`}).join('')+
  `<div class="card"><b id="fres">${sc.filter(pass).length} matchs</b> envoyés automatiquement vers l'analyse.</div>`}
 function mn(k,v){S.F[k].min=+v;const sc=scope();$('#v-'+k).textContent=f1(+v);$('#n-'+k).textContent=sc.filter(m=>tot(m,k)>=+v).length+' sur '+sc.length+' matchs correspondent';$('#fres').textContent=sc.filter(pass).length+' matchs';rail()}
 
-function vA(){const{fl}=calc();if(!fl.length)return empty('Aucun match retenu par vos filtres.');
- return `<h2>Analyse</h2>`+fl.map(m=>{const tp=tipsOf(m);if(!tp.length)return`<div class="card">${m.home} – ${m.away} : activez au moins un critère.</div>`;
+function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Aucun match retenu par vos filtres.');
+ return `<h2>Analyse</h2>`+pr+fl.map(m=>{const tp=tipsOf(m);if(!tp.length)return`<div class="card">${m.home} – ${m.away} : activez au moins un critère.</div>`;
  const k=[...tp].sort((a,b)=>b.p-a.p)[0];
- return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp} · ${dl(m.kickoff)} ${hm(m.kickoff)}</div><b style="font-size:17px">${m.home} – ${m.away}</b>
+ return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp} · ${dl(m.kickoff)} ${hm(m.kickoff)}</div>${vs(m)}
  <div class="key">Point clé : ${k.c.n.toLowerCase()}, ${f1(k.mean)} attendus, ${pc(k.p)} de chances de dépasser ${f1(k.line)}.</div>`+
  tp.map(t=>`<div style="margin-top:10px"><div class="row" style="margin:0"><span>${t.c.i} ${t.c.n}</span><span class="sub">${m.home} ${f1(m.st[t.c.k][0])} + ${m.away} ${f1(m.st[t.c.k][1])} = <b>${f1(t.mean)}</b></span></div><div class="bar"><i style="width:${t.p*100}%"></i></div><div class="sub">Plus de ${f1(t.line)} : ${pc(t.p)}</div></div>`).join('')+`</div>`}).join('')}
 
 function vP(){const{fl,tp}=calc();if(!fl.length)return empty('Aucun match analysé.');
  return `<h2>Pronostics</h2>`+fl.map((m,i)=>{const t=tp[i],best=[...t].sort((a,b)=>b.p-a.p)[0];
- return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp}</div><b style="font-size:17px">${m.home} – ${m.away}</b>`+
+ return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp}</div>${vs(m)}`+
  t.map(x=>`<div class="row"><div><b>${x===best?'★ ':''}Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Moyenne ${f1(x.mean)} · ${pc(x.p)} estimé${x.real?'':' · cote simulée'}</div></div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
  (`<div class="sub">Cote simulée à partir de la probabilité quand la source ne fournit pas la cote du marché (corners, cartons, tirs, fautes).</div>`)}
 
@@ -214,7 +239,7 @@ function vG(){const{fl,cb}=calc();
  c.legs.map(t=>`<div class="row"><div><b>${t.m.home} – ${t.m.away}</b><div class="sub">Plus de ${f1(t.line)} ${t.c.n.toLowerCase()} · moyenne ${f1(t.mean)} · ${pc(t.p)}</div></div><b class="big" style="font-size:22px">${f2(t.odd)}</b></div>`).join('')+
  `<div class="key">Synthèse : ${c.legs.length} matchs, cote totale ${f2(c.odd)}, probabilité conjointe estimée à ${pc(c.p)}. Chaque sélection part d'une moyenne combinée supérieure à sa ligne.</div></div>`).join('')}
 
-function go(v){if(v){S.v=v;scrollTo(0,0)}rail();$('#app').innerHTML={m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]()}
+function go(v){if(v){S.v=v;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML={m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]()}
 function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
 go();
 (async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;go()}
