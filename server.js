@@ -6,7 +6,7 @@ const GAP = 6500;                                   // 10 requêtes/minute maxim
 const TTL = { fixtures: 48 * 36e5, odds: 3 * 36e5 };  // durée de cache : 48 h, cotes 3 h
 const FILE = path.join(__dirname, "cache.json"), ALLOWED = /^\/(fixtures|odds)(\?|$)/;
 let cache = {}; try { cache = JSON.parse(fs.readFileSync(FILE)); } catch {}
-let remaining = 100, chain = Promise.resolve(), last = 0;
+let remaining = 100, chain = Promise.resolve(), last = 0, aiDay = "", aiCount = 0;
 
 function fetchApi(p) {                              // file d'attente : une requête toutes les 6,5 s
   const job = chain.then(async () => {
@@ -20,6 +20,31 @@ function fetchApi(p) {                              // file d'attente : une requ
 }
 
 http.createServer(async (req, res) => {
+  if (req.url === "/ai" && req.method === "POST") {  // filtre/analyse par prompts via l'API Anthropic (clé et code sur le serveur)
+    const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
+    const AK = process.env.ANTHROPIC_API_KEY, CODE = process.env.APP_CODE;
+    if (!AK || !CODE) return send(503, { error: "IA désactivée : ANTHROPIC_API_KEY et APP_CODE manquants sur le serveur." });
+    let raw = ""; for await (const ch of req) { raw += ch; if (raw.length > 200000) return send(413, { error: "Requête trop grande." }); }
+    let b; try { b = JSON.parse(raw); } catch { return send(400, { error: "JSON invalide." }); }
+    if (b.code !== CODE) return send(401, { error: "Code d'accès incorrect." });
+    const day = new Date().toISOString().slice(0, 10); if (aiDay !== day) { aiDay = day; aiCount = 0; }
+    if (aiCount >= (+process.env.AI_MAX_PER_DAY || 60)) return send(429, { error: "Limite quotidienne d'appels IA atteinte." });
+    const prompt = String(b.prompt || "").slice(0, 6000), ms = (b.matches || []).slice(0, 30);
+    if (!prompt.trim() || !ms.length) return send(400, { error: "Prompt ou matchs manquants." });
+    const f = b.type === "f";
+    const system = "Tu es un analyste football. Tu appliques UNIQUEMENT le prompt de l'utilisateur aux données fournies. N'invente aucune statistique ni information absente des données : si une donnée manque pour décider, dis-le. Les moyennes sont calculées sur les derniers matchs de chaque équipe. Réponds uniquement par un tableau JSON valide, sans texte autour.";
+    const format = f ? 'Pour CHAQUE match, renvoie {"id":<id>,"keep":true|false,"why":"raison en 25 mots maximum"}.' : 'Pour CHAQUE match, renvoie {"id":<id>,"analyse":"analyse en 60 mots maximum"}.';
+    const content = `Marché : ${b.market}\n\nPrompt de l'utilisateur :\n${prompt}\n\nMatchs (JSON) :\n${JSON.stringify(ms)}\n\n${format}`;
+    try {
+      aiCount++;
+      const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": AK, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({ model: process.env.AI_MODEL || "claude-sonnet-5-5", max_tokens: 2000, system, messages: [{ role: "user", content }] }) });
+      const j = await r.json();
+      if (!r.ok) return send(502, { error: (j.error && j.error.message) || "Erreur API Anthropic " + r.status });
+      const m = (j.content || []).map(x => x.text || "").join("").match(/\[[\s\S]*\]/);
+      return send(200, { results: m ? JSON.parse(m[0]) : [] });
+    } catch (e) { return send(502, { error: String(e) }); }
+  }
   if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h
     const p = req.url.slice(4);
     if (!/^\/(fixtures\.csv|mmz4281\/\d{4}\/(E0|E1|E2|E3|EC|SC0|SC1|SC2|SC3|SP1|SP2|F1|F2|D1|D2|I1|I2|N1|P1|B1|T1|G1)\.csv)$/.test(p)) { res.writeHead(403); return res.end(); }
