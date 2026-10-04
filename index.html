@@ -52,12 +52,28 @@ h2{font:700 24px var(--df);margin:14px 0 2px}
 .ck{display:flex;align-items:center;gap:8px;cursor:pointer}
 .ck input{width:20px;height:20px;accent-color:var(--acc)}
 .tb{width:100%;border-collapse:collapse}.tb th,.tb td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:middle}.tb th{color:var(--mut);font-weight:500}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}.mark{width:34px;height:34px;flex:none}
+.bn{font:700 22px/1 var(--df);letter-spacing:.02em}.hr{display:flex;align-items:center;gap:8px}
+.pill{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+body{font-feature-settings:"tnum" 1}
+.card{border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.14)}
+h2{font:600 12.5px var(--sf);letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin:24px 0 8px}
+.comp{font:700 19px var(--df);letter-spacing:.02em;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle}
+.mkt{padding:10px 0;border-top:1px solid var(--line)}
+.lines{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.chip.sm{padding:5px 11px;font-size:13px}
+input.ln{width:84px;padding:5px 8px;border-radius:99px;border:1px dashed var(--line);background:transparent;color:var(--ink);font:500 13px var(--sf)}
+.bar{height:6px}.bar i.hi{background:var(--ok)}.bar i.mid{background:#f5a524}.bar i.lo{background:var(--red)}
+.pp{font-weight:600;padding:1px 7px;border-radius:99px;border:1px solid currentColor}.pp.hi{color:var(--ok)}.pp.mid{color:#f5a524}.pp.lo{color:var(--red)}
+.tb th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
 </style>
 </head>
 <body>
 <nav class="rail" id="rail" aria-label="Étapes"></nav>
 <main>
-<header><div><h1>Pronos Lab</h1><div class="sub">Matchs, filtres, analyse, pronostics, combiné</div></div><button class="chip" onclick="th()" aria-label="Changer de thème">◐</button></header>
+<header class="top"><div class="brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--acc)"/><path d="M7 22l6-7 4 4 8-10" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="bn">Pronos Lab</div><div class="sub">Analyse football</div></div></div><div class="hr"><span class="pill" id="src"></span><button class="chip" onclick="th()" aria-label="Changer de thème">◐</button></div></header>
 <div class="sub" id="st"></div>
 <div id="app"></div>
 <p class="sub">Les probabilités sont des estimations statistiques, jamais des certitudes. Jouez avec modération.</p>
@@ -156,15 +172,15 @@ const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, faut
 const Provider={demo:Demo,api:Api,csv:Csv}[MODE];
 
 // ===== ÉTAT ET ANALYSE =====
-const CR=[{k:'yc',n:'Cartons jaunes',i:'🟨',lo:2,hi:8,s:.5},{k:'sh',n:'Tirs',i:'🎯',lo:14,hi:36,s:1},{k:'fo',n:'Fautes',i:'🚩',lo:16,hi:32,s:1},{k:'th',n:'Touches',i:'🙌',lo:30,hi:50,s:1},{k:'co',n:'Corners',i:'⛳',lo:6,hi:14,s:.5}];
-let ALL=[],S={fc:null,P:{f:{},a:{}},comps:new Set(),mk:{},rows:[],started:false,msg:'',v:'m',r:'today',c:'all',tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
+const CR=[{k:'yc',n:'Cartons jaunes',i:'<i class="dot" style="background:#f5c518"></i>',lo:2,hi:8,s:.5},{k:'sh',n:'Tirs',i:'<i class="dot" style="background:#4f8cff"></i>',lo:14,hi:36,s:1},{k:'fo',n:'Fautes',i:'<i class="dot" style="background:#ff5560"></i>',lo:16,hi:32,s:1},{k:'th',n:'Touches',i:'<i class="dot" style="background:#a78bfa"></i>',lo:30,hi:50,s:1},{k:'co',n:'Corners',i:'<i class="dot" style="background:#34d27b"></i>',lo:6,hi:14,s:.5}];
+let ALL=[],S={fc:null,P:{f:{},a:{}},comps:new Set(),cfg:{},rows:[],started:false,msg:'',v:'m',r:'today',c:'all',tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
 const tot=(m,k)=>m.st[k][0]+m.st[k][1];
 const same=(a,b)=>a.toDateString()===b.toDateString();
 const base=()=>ALL.filter(inR);
 const pOver=(l,mu)=>{let s=0,t=Math.exp(-mu);for(let i=0;i<=Math.floor(l);i++){s+=t;t*=mu/(i+1)}return 1-s};
-const tipsOf=m=>CR.filter(c=>S.rows.some(r=>r.id==m.id&&r.k==c.k)).map(c=>{const mean=tot(m,c.k);let line=Math.floor(mean-.35*Math.sqrt(mean))+.5,real=false,odd;
+const tipsOf=m=>S.rows.filter(r=>r.id==m.id).map(r=>{const c=CR.find(x=>x.k==r.k),mean=tot(m,c.k),line=r.line;let real=false,odd;
  const ol=m.odds&&m.odds[c.k];
- if(ol){const ls=Object.keys(ol).map(Number);if(ls.length){line=ls.reduce((a,b)=>Math.abs(b-line)<Math.abs(a-line)?b:a);odd=ol[line];real=true}}
+ if(ol&&ol[line]){odd=ol[line];real=true}
  const p=pOver(line,mean);
  return{m,c,mean,line,p,real,odd:real?odd:Math.max(1.05,Math.round(.93/p*100)/100)}});
 function combos(tp){const res=[];(function rec(i,cur){
@@ -201,27 +217,35 @@ const pbox=(t,k)=>`<textarea rows="3" placeholder="Colle ici ton prompt de ${t==
 function cp(t,k){const c=CR.find(x=>x.k==k),ms=t=='f'?ALL.filter(inR):calc().fl;
  const txt=(S.P[t][k]||"").trim()+"\n\nMatchs ("+c.n+") :\n"+ms.map(m=>`${m.comp} : ${m.home} - ${m.away} | ${m.home} ${f1(m.st[k][0])}, ${m.away} ${f1(m.st[k][1])}, total ${f1(tot(m,k))}`).join("\n");
  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert("Copié : colle-le dans Claude."),()=>alert("Copie impossible sur ce navigateur."))}
-function tc(c,on){on?S.comps.add(c):S.comps.delete(c);if(on)S.mk[c]=S.mk[c]||{};S.msg='';go(on?'f':undefined)}
-function tm(c,k,on){S.mk[c]=S.mk[c]||{};S.mk[c][k]=on;go()}
-function runFilter(c){const ks=CR.filter(x=>(S.mk[c]||{})[x.k]).map(x=>x.k);
- if(!ks.length){S.msg='Coche au moins un marché pour '+c+'.';return go()}
+const LN={yc:[2.5,3.5,4.5,5.5,6.5],sh:[20.5,22.5,24.5,26.5,28.5],fo:[20.5,22.5,24.5,26.5,28.5],th:[34.5,36.5,38.5,40.5,42.5],co:[7.5,8.5,9.5,10.5,11.5]};
+try{Object.assign(S.cfg,JSON.parse(localStorage.getItem('pl_cfg')||'{}'))}catch(e){}
+const cfg=(c,k)=>{S.cfg[c]=S.cfg[c]||{};return S.cfg[c][k]=S.cfg[c][k]||{on:0,sel:[LN[k][2]],extra:[]}};
+const svc=()=>{try{localStorage.setItem('pl_cfg',JSON.stringify(S.cfg))}catch(e){}};
+const pcls=p=>p>=.68?'hi':p>=.58?'mid':'lo';
+function tc(c,on){on?S.comps.add(c):S.comps.delete(c);S.msg='';go(on?'f':undefined)}
+function tm(c,k,on){cfg(c,k).on=on?1:0;svc();go()}
+function tl(c,k,l){const o=cfg(c,k),i=o.sel.indexOf(l);i<0?o.sel.push(l):o.sel.splice(i,1);o.sel.sort((a,b)=>a-b);svc();go()}
+function al(c,k,v){v=Math.round(parseFloat(String(v).replace(',','.'))*2)/2;if(!(v>0))return go();const o=cfg(c,k);if(!LN[k].includes(v)&&!o.extra.includes(v))o.extra.push(v);if(!o.sel.includes(v))o.sel.push(v);o.sel.sort((a,b)=>a-b);svc();go()}
+function runFilter(c){const ks=CR.filter(x=>cfg(c,x.k).on&&cfg(c,x.k).sel.length).map(x=>x.k);
+ if(!ks.length){S.msg='Coche un marché et au moins une ligne pour '+c+'.';return go()}
  const ms=ALL.filter(m=>m.comp==c&&inR(m));let add=0;
  for(const k of ks){S.rows=S.rows.filter(r=>!(r.k==k&&(ALL.find(x=>x.id==r.id)||{}).comp==c));
-  for(const m of ms)if(tot(m,k)>=S.F[k].min){S.rows.push({id:m.id,k});add++}}
- S.msg=add?add+' match(s) ajouté(s) au tableau pour '+c+'.':'Aucun match de '+c+' ne passe le seuil choisi (voir « Seuils par marché »).';go()}
+  for(const L of cfg(c,k).sel)for(const m of ms)if(tot(m,k)>=L){S.rows.push({id:m.id,k,line:L});add++}}
+ S.msg=add?add+' ligne(s) ajoutée(s) au tableau pour '+c+'.':'Aucun match de '+c+' n\'atteint les lignes choisies.';go()}
 function start(){if(!S.rows.length)return;S.started=true;go('a')}
-function mn(k,v){S.F[k].min=+v;$('#v-'+k).textContent=f1(+v)}
-const seuils=()=>`<details class="card"><summary>Seuils par marché (moyenne combinée minimale)</summary>`+CR.map(c=>`<div style="margin-top:10px"><div class="row" style="margin:0"><span>${c.i} ${c.n}</span><b class="big" id="v-${c.k}">${f1(S.F[c.k].min)}</b></div><input type="range" min="${c.lo}" max="${c.hi}" step="${c.s}" value="${S.F[c.k].min}" oninput="mn('${c.k}',this.value)" aria-label="Minimum ${c.n}"></div>`).join('')+`</details><details class="card"><summary>Mes prompts de filtration</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('f',c.k)}</div>`).join('')}</details>`;
-function tableau(){const rs=S.rows.map((r,i)=>({m:ALL.find(x=>x.id==r.id),k:r.k,i})).filter(r=>r.m);
- return `<h2>Matchs filtrés</h2>`+(rs.length?`<div class="card"><table class="tb"><tr><th>Match</th><th>Marché</th><th>Att.</th><th></th></tr>`+rs.map(r=>{const c=CR.find(x=>x.k==r.k);return `<tr><td><div class="sub" style="color:var(--red)">${r.m.comp}</div>${lg(r.m.home,r.m.homeLogo)}${lg(r.m.away,r.m.awayLogo)} ${r.m.home} – ${r.m.away}</td><td>${c.i} ${c.n}</td><td>${f1(tot(r.m,r.k))}</td><td><button class="chip" onclick="S.rows.splice(${r.i},1);go()" aria-label="Retirer">✕</button></td></tr>`}).join('')+`</table><div class="row"><button class="chip on" onclick="start()">▶ Démarrer</button><button class="chip" onclick="S.rows=[];S.started=false;go()">Vider</button></div></div>`:`<div class="card">Le tableau est vide. Coche un marché puis touche « Filtrer ».</div>`)}
+const prompts=()=>`<details class="card"><summary>Mes prompts de filtration</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('f',c.k)}</div>`).join('')}</details>`;
+function tableau(){const rs=S.rows.map((r,i)=>({m:ALL.find(x=>x.id==r.id),k:r.k,line:r.line,i})).filter(r=>r.m);
+ return `<h2>Matchs filtrés</h2>`+(rs.length?`<div class="card"><table class="tb"><tr><th>Match</th><th>Marché</th><th>Ligne</th><th>Moy.</th><th></th></tr>`+rs.map(r=>{const c=CR.find(x=>x.k==r.k);return `<tr><td><div class="sub" style="color:var(--red)">${r.m.comp}</div>${lg(r.m.home,r.m.homeLogo)}${lg(r.m.away,r.m.awayLogo)} ${r.m.home} – ${r.m.away}</td><td>${c.i} ${c.n}</td><td>+${f1(r.line)}</td><td>${f1(tot(r.m,r.k))}</td><td><button class="chip" onclick="S.rows.splice(${r.i},1);go()" aria-label="Retirer">✕</button></td></tr>`}).join('')+`</table><div class="row"><button class="chip on" onclick="start()">▶ Démarrer</button><button class="chip" onclick="S.rows=[];S.started=false;go()">Vider</button></div></div>`:`<div class="card">Le tableau est vide. Coche un marché, choisis tes lignes puis touche « Filtrer ».</div>`)}
 function vF(){const cs=[...S.comps];let h=`<h2>Filtre</h2>`;
  if(!cs.length)h+=`<div class="card">Aucun championnat coché. Coche-en un dans l'onglet Matchs.<div class="row"><button class="chip" onclick="go('m')">Aller dans Matchs</button></div></div>`;
  for(const c of cs){const ms=ALL.filter(m=>m.comp==c&&inR(m));
   h+=`<div class="card"><div class="row" style="margin:0"><b style="color:var(--red);font-size:18px">${c}</b><button class="chip" data-c="${c}" onclick="tc(this.dataset.c,false)">Retirer</button></div><div class="sub">${ms.length} match(s) · ${{today:"aujourd'hui",up:'à venir',done:'terminés',all:'tous'}[S.r]}</div>`+
-  CR.map(k=>`<label style="margin-top:8px"><input type="checkbox" data-c="${c}" data-k="${k.k}" ${(S.mk[c]||{})[k.k]?'checked':''} ${k.k=='th'&&MODE=='csv'?'disabled':''} onchange="tm(this.dataset.c,this.dataset.k,this.checked)"> ${k.i} ${k.n}${k.k=='th'&&MODE=='csv'?' (indisponible)':` <span class="sub">min ${f1(S.F[k.k].min)}</span>`}</label>`).join('')+
+  CR.map(k=>{const o=cfg(c,k.k),dis=k.k=='th'&&MODE=='csv';
+   return `<div class="mkt"><label><input type="checkbox" data-c="${c}" data-k="${k.k}" ${o.on?'checked':''} ${dis?'disabled':''} onchange="tm(this.dataset.c,this.dataset.k,this.checked)"> ${k.i} ${k.n}${dis?' <span class="sub">(indisponible)</span>':''}</label>`+
+   (o.on?`<div class="sub" style="margin-top:6px">Lignes « Plus de » (garde les matchs dont la moyenne combinée atteint la ligne)</div><div class="lines">${[...new Set([...LN[k.k],...o.extra])].sort((a,b)=>a-b).map(l=>`<button class="chip sm ${o.sel.includes(l)?'on':''}" data-c="${c}" data-k="${k.k}" data-l="${l}" onclick="tl(this.dataset.c,this.dataset.k,+this.dataset.l)">${f1(l)}</button>`).join('')}<input class="ln" type="number" step=".5" placeholder="+ ligne" data-c="${c}" data-k="${k.k}" onchange="al(this.dataset.c,this.dataset.k,this.value)"></div>`:'')+`</div>`}).join('')+
   `<div class="row"><button class="chip on" data-c="${c}" onclick="runFilter(this.dataset.c)">Filtrer ${c}</button></div></div>`}
  if(S.msg)h+=`<div class="sub">${esc(S.msg)}</div>`;
- return h+tableau()+seuils()}
+ return h+tableau()+prompts()}
 function vM(){const b=base();
  const rg=[['today',"Aujourd'hui"],['up','À venir'],['done','Terminés'],['all','Tous']].map(r=>`<button class="chip ${S.r==r[0]?'on':''}" onclick="S.r='${r[0]}';go()">${r[1]}</button>`).join('');
  let h=`<div class="chips">${rg}</div><div class="sub">Coche un championnat pour passer au filtre.</div>`;
@@ -237,12 +261,12 @@ function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts 
  const k=[...tp].sort((a,b)=>b.p-a.p)[0];
  return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp} · ${dl(m.kickoff)} ${hm(m.kickoff)}</div>${vs(m)}
  <div class="key">Point clé : ${k.c.n.toLowerCase()}, ${f1(k.mean)} attendus, ${pc(k.p)} de chances de dépasser ${f1(k.line)}.</div>`+
- tp.map(t=>`<div style="margin-top:10px"><div class="row" style="margin:0"><span>${t.c.i} ${t.c.n}</span><span class="sub">${m.home} ${f1(m.st[t.c.k][0])} + ${m.away} ${f1(m.st[t.c.k][1])} = <b>${f1(t.mean)}</b></span></div><div class="bar"><i style="width:${t.p*100}%"></i></div><div class="sub">Plus de ${f1(t.line)} : ${pc(t.p)}</div></div>`).join('')+`</div>`}).join('')}
+ tp.map(t=>`<div style="margin-top:10px"><div class="row" style="margin:0"><span>${t.c.i} ${t.c.n}</span><span class="sub">${m.home} ${f1(m.st[t.c.k][0])} + ${m.away} ${f1(m.st[t.c.k][1])} = <b>${f1(t.mean)}</b></span></div><div class="bar"><i class="${pcls(t.p)}" style="width:${t.p*100}%"></i></div><div class="sub">Plus de ${f1(t.line)} : ${pc(t.p)}</div></div>`).join('')+`</div>`}).join('')}
 
 function vP(){const{fl,tp}=calc();if(!fl.length)return empty('Aucun match analysé.');
  return `<h2>Pronostics</h2>`+fl.map((m,i)=>{const t=tp[i],best=[...t].sort((a,b)=>b.p-a.p)[0];
  return `<div class="card"><div class="sub" style="color:var(--red)">${m.comp}</div>${vs(m)}${m.done?` <span class="tag">Score ${m.score[0]}–${m.score[1]}</span>`:''}`+
- t.map(x=>`<div class="row"><div><b>${x===best?'★ ':''}Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Moyenne ${f1(x.mean)} · ${pc(x.p)} estimé${x.real?'':' · cote simulée'}${hit(x)===null?'':' · réel '+f1(x.m.real[x.c.k][0]+x.m.real[x.c.k][1])+(hit(x)?' ✓':' ✗')}</div></div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
+ t.map(x=>`<div class="row"><div><b>${x===best?'★ ':''}Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Moyenne ${f1(x.mean)} · <span class="pp ${pcls(x.p)}">${pc(x.p)}</span>${x.real?'':' · cote simulée'}${hit(x)===null?'':' · réel '+f1(x.m.real[x.c.k][0]+x.m.real[x.c.k][1])+(hit(x)?' ✓':' ✗')}</div></div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
  (`<div class="sub">Cote simulée à partir de la probabilité quand la source ne fournit pas la cote du marché (corners, cartons, tirs, fautes).</div>`)}
 
 function vG(){const{fl,cb}=calc();
@@ -255,6 +279,7 @@ function vG(){const{fl,cb}=calc();
 
 function go(v){if(v){S.v=v;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML={m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]()}
 function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
+$('#src').textContent={demo:'Démo',api:'API-Football',csv:'Données CSV'}[MODE];
 go();
 (async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;go()}
 catch(e){$('#st').textContent='';go();$('#app').insertAdjacentHTML('afterbegin',`<div class="card">Impossible de charger les données (${e.message}). Vérifiez la clé côté serveur ou <a href="?demo" style="color:var(--acc)">ouvrez le mode démonstration</a>.</div>`)}})();
