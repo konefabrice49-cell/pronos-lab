@@ -75,6 +75,8 @@ input.ln{width:84px;padding:5px 8px;border-radius:99px;border:1px dashed var(--l
 .fm{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;font:700 12px var(--sf);color:#fff;margin-right:3px}
 .why div{margin-top:4px}.why summary{color:var(--acc);cursor:pointer}
 .lnk{cursor:pointer}
+.mrow{display:flex;gap:8px;margin-top:8px;align-items:center}.mrow .lb{flex:1;font-size:14px}.mrow input[type=number]{width:76px}
+input.tx,input[type=date],input[type=time]{flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 15px var(--sf)}
 </style>
 </head>
 <body>
@@ -109,7 +111,7 @@ M(9,'Serie A','Inter','Juventus',D(0,20,45),[[2.2,2.5],[13,11],[12.5,13.8],[20,2
 M(10,'Serie A','Milan','Naples',D(1,18,0),[[2.3,2.1],[12,14],[12,12.5],[22,19],[5.0,5.5]]),
 M(11,'Ligue des champions','Atlético','Benfica',D(3,21,0),[[2.6,2.3],[11,12],[13,12],[19,21],[4.8,5.2]]),
 M(12,'Europa League','Roma','Villarreal',D(2,21,0),[[2.1,2.3],[12,11],[12.5,12],[20,19],[5.3,4.7]])]}};
-const LEAGUES={39:"Premier League",140:"La Liga",61:"Ligue 1",78:"Bundesliga",135:"Serie A",2:"Ligue des champions",3:"Europa League",5:"Ligue des nations"};
+const LEAGUES={39:"Premier League",140:"La Liga",61:"Ligue 1",78:"Bundesliga",135:"Serie A",2:"Ligue des champions",3:"Europa League"};
 const LAST_N=8,MAX_MATCHES=10,DAYS_AHEAD=1;
 const Api={
  async get(p){const r=await fetch(CONFIG.API_BASE_URL+p);const j=await r.json().catch(()=>({}));
@@ -254,6 +256,22 @@ const why=t=>{const m=t.m,k=t.c.k,a=m.st[k][0],b=m.st[k][1],hi=a>=b?m.home:m.awa
  P.push('Limite : moyennes des derniers matchs de la saison en cours, sans arbitre, absences ni forme du jour.');
  return `<div class="why">${P.map(p=>`<div>• ${p}</div>`).join('')}</div>`};
 const whyBox=t=>`<details class="sub why" onclick="event.stopPropagation()"><summary>Pourquoi ?</summary>${why(t)}</details>`;
+const lsM=()=>{try{return JSON.parse(localStorage.getItem('pl_manual'))||[]}catch(e){return[]}};
+function mergeManual(){const L=lsM();ALL=ALL.filter(m=>!m.manual);L.forEach((x,i)=>ALL.push({id:9000+i,comp:'Ligue des champions',home:x.home,away:x.away,kickoff:new Date(x.t),st:x.st,manual:true}))}
+function addManual(){const g=id=>(document.getElementById(id).value||'').trim(),h=g('m-h'),a=g('m-a');
+ if(!h||!a){S.mm='Renseigne les deux équipes.';S.mfOpen=true;return go()}
+ const t=new Date(g('m-d')+'T'+(g('m-t')||'21:00'));if(isNaN(t)){S.mm='Date ou heure invalide.';S.mfOpen=true;return go()}
+ const st={};for(const c of CR){const v=x=>{const n=parseFloat(g('m-'+c.k+'-'+x).replace(',','.'));return n>=0?n:0};st[c.k]=[v('h'),v('a')]}
+ const L=lsM();L.push({home:h,away:a,t:t.toISOString(),st});try{localStorage.setItem('pl_manual',JSON.stringify(L))}catch(e){S.mm="Impossible d'enregistrer sur cet appareil.";S.mfOpen=true;return go()}
+ mergeManual();S.mfOpen=false;S.mm='Match ajouté : '+h+' – '+a+'.';S.r='all';go()}
+function delManual(i){const L=lsM();L.splice(i,1);try{localStorage.setItem('pl_manual',JSON.stringify(L))}catch(e){}const mids=ALL.filter(m=>m.manual).map(m=>m.id);S.rows=S.rows.filter(r=>!mids.includes(r.id));S.mm='';mergeManual();go()}
+function manualForm(){const iso=new Date().toISOString().slice(0,10),L=lsM();
+ return `<details class="card"${S.mfOpen?' open':''}><summary>＋ Ajouter un match de Ligue des champions</summary><div class="sub" style="margin-top:8px">Saisie manuelle : entre les moyennes par match de la saison en cours pour chaque équipe. Laisse vide ce que tu ne connais pas. L'appli ne vérifie pas ces chiffres.</div>
+ <div class="mrow"><input id="m-d" type="date" value="${iso}"><input id="m-t" type="time" value="21:00"></div>
+ <div class="mrow"><input id="m-h" class="tx" placeholder="Équipe à domicile"></div><div class="mrow"><input id="m-a" class="tx" placeholder="Équipe à l'extérieur"></div>
+ ${CR.map(c=>`<div class="mrow"><span class="lb">${c.i} ${c.n}</span><input type="number" step="0.1" min="0" id="m-${c.k}-h" placeholder="Dom."><input type="number" step="0.1" min="0" id="m-${c.k}-a" placeholder="Ext."></div>`).join('')}
+ <div class="row"><button class="chip on" onclick="addManual()">Ajouter le match</button></div>${S.mm?`<div class="sub">${esc(S.mm)}</div>`:''}
+ ${L.length?`<h2>Matchs saisis</h2>`+L.map((x,i)=>`<div class="row"><span>${esc(x.home)} – ${esc(x.away)}</span><button class="chip" onclick="delManual(${i})" aria-label="Supprimer">✕</button></div>`).join(''):''}</details>`}
 function tc(c,on){on?S.comps.add(c):S.comps.delete(c);S.msg='';go(on?'f':undefined)}
 function tm(c,k,on){cfg(c,k).on=on?1:0;svc();go()}
 function tl(c,k,l){const o=cfg(c,k),i=o.sel.indexOf(l);i<0?o.sel.push(l):o.sel.splice(i,1);o.sel.sort((a,b)=>a-b);svc();go()}
@@ -286,7 +304,7 @@ function vM(){const b=base();
   h+=`<label class="comp ck"><input type="checkbox" data-c="${c}" ${S.comps.has(c)?'checked':''} onchange="tc(this.dataset.c,this.checked)"> ${c}${n?` <span class="tag ok">${n} au tableau</span>`:''}</label>`;
   for(const m of b.filter(x=>x.comp==c)){const ic=S.rows.filter(r=>r.id==m.id).map(r=>CR.find(x=>x.k==r.k).i).join('');
    h+=`<div class="card m" style="cursor:pointer" onclick="od(${m.id})"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div>${two(m)}${m.done?`<span class="tag">${m.score[0]}–${m.score[1]}</span>`:ic?`<span class="tag ok">${ic}</span>`:''}</div>`}}
- return h+`<details class="card"><summary>Source des données : ${{demo:'démonstration',api:'API-Football',csv:'football-data.co.uk (CSV gratuit)'}[MODE]}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration.</p></details>`}
+ return h+manualForm()+`<details class="card"><summary>Source des données : ${{demo:'démonstration',api:'API-Football',csv:'football-data.co.uk (CSV gratuit)'}[MODE]}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration.</p></details>`}
 
 function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Ajoute des matchs au tableau dans Filtre, puis touche Démarrer.');
  return `<h2>Analyse</h2>`+pr+fl.map(m=>{const tp=tipsOf(m);if(!tp.length)return`<div class="card">${m.home} – ${m.away} : activez au moins un critère.</div>`;
@@ -311,7 +329,7 @@ function vG(){const{fl,cb}=calc();
 
 const FM={V:'var(--ok)',N:'#f5a524',D:'var(--red)'};
 function vD(){const m=ALL.find(x=>x.id==S.det);if(!m){S.det=null;return''}
- const mk=CR.filter(c=>!(c.k=='th'&&MODE=='csv')),I=m.info;
+ const mk=CR.filter(c=>!(c.k=='th'&&MODE=='csv')&&!(m.manual&&!m.st[c.k][0]&&!m.st[c.k][1])),I=m.info; // match saisi : marchés non renseignés masqués
  const bar=(a,b)=>{const t=a+b||1;return`<div class="split"><i style="width:${a/t*100}%"></i><i class="b" style="width:${b/t*100}%"></i></div>`};
  const blk=(title,src)=>`<h2>${title}</h2><div class="card">`+mk.map(c=>{const a=src[c.k][0],b=src[c.k][1];return`<div class="dr"><b>${f1(a)}</b><div class="dc"><div class="sub">${c.i} ${c.n}</div>${bar(a,b)}<div class="sub">total ${f1(a+b)}</div></div><b>${f1(b)}</b></div>`}).join('')+`</div>`;
  const fm=t=>t.form.split('').map(x=>`<span class="fm" style="background:${FM[x]}">${x}</span>`).join('');
@@ -326,8 +344,8 @@ function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$
 function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
 $('#src').textContent={demo:'Démo',api:'API-Football',csv:'Données CSV'}[MODE];
 go();
-(async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;go();loadLogos()}
-catch(e){$('#st').textContent='';go();$('#app').insertAdjacentHTML('afterbegin',`<div class="card">Impossible de charger les données (${e.message}). Vérifiez la clé côté serveur ou <a href="?demo" style="color:var(--acc)">ouvrez le mode démonstration</a>.</div>`)}})();
+(async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;mergeManual();go();loadLogos()}
+catch(e){$('#st').textContent='';mergeManual();go();$('#app').insertAdjacentHTML('afterbegin',`<div class="card">Impossible de charger les données (${e.message}). Vérifiez la clé côté serveur ou <a href="?demo" style="color:var(--acc)">ouvrez le mode démonstration</a>.</div>`)}})();
 </script>
 </body>
 </html>
