@@ -116,8 +116,11 @@ const Api={
   if(!r.ok||(j.errors&&Object.keys(j.errors).length))throw new Error(Object.values(j.errors||{})[0]||"HTTP "+r.status);return j.response},
  stat(l,t){const s=l.find(x=>x.type===t);return parseFloat(s&&s.value)||0},
  async teamAvg(id){ // 2 requêtes par équipe : derniers matchs, puis leurs statistiques (ids=a-b-c)
-  const prev=await this.get(`/fixtures?team=${id}&last=${LAST_N}`);
-  const det=await this.get(`/fixtures?ids=${prev.map(f=>f.fixture.id).join("-")}`);
+  const now=new Date(),S=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1,iso=d=>d.toISOString().slice(0,10),ago=new Date(now.getTime()-120*864e5);
+  let all;try{all=await this.get(`/fixtures?team=${id}&season=${S}&status=FT`)}catch(e1){try{all=await this.get(`/fixtures?team=${id}&from=${iso(ago)}&to=${iso(now)}&status=FT`)}catch(e2){throw new Error(e1.message)}}
+  const prev=all.sort((a,b)=>a.fixture.timestamp-b.fixture.timestamp).slice(-LAST_N);
+  if(!prev.length)throw new Error("Aucun match terminé trouvé pour cette équipe");
+  let det;try{det=await this.get(`/fixtures?ids=${prev.map(f=>f.fixture.id).join("-")}`)}catch(e){det=[];for(const f of prev.slice(-5))det.push({statistics:await this.get(`/fixtures/statistics?fixture=${f.fixture.id}`)})}
   const a={yc:0,sh:0,fo:0,th:0,co:0};let n=0;
   for(const d of det){const t=(d.statistics||[]).find(x=>x.team.id===id);if(!t)continue;n++;
    a.yc+=this.stat(t.statistics,"Yellow Cards");a.sh+=this.stat(t.statistics,"Total Shots");a.fo+=this.stat(t.statistics,"Fouls");
