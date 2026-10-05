@@ -141,7 +141,7 @@ const Api={
     const h=await this.teamAvg(x.teams.home.id),a=await this.teamAvg(x.teams.away.id),odds=await this.odds(x.fixture.id),stt={};
     for(const k of ["yc","sh","fo","th","co"])stt[k]=[h[k],a[k]];
     push({id:x.fixture.id,comp:LEAGUES[x.league.id],home:x.teams.home.name,away:x.teams.away.name,homeLogo:x.teams.home.logo,awayLogo:x.teams.away.logo,kickoff:new Date(x.fixture.date),st:stt,odds});n++}
-   catch(e){st(`Quota ou limite atteinte : ${n} matchs chargés.`);return}}
+   catch(e){st(`API-Football a répondu : « ${e.message} » (${n} match(s) chargé(s)).`);return}}
   if(n)st("")}
 };
 const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, fautes, cartons jaunes ; pas de touches)
