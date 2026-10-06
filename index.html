@@ -77,6 +77,24 @@ input.ln{width:84px;padding:5px 8px;border-radius:99px;border:1px dashed var(--l
 .lnk{cursor:pointer}
 .mrow{display:flex;gap:8px;margin-top:8px;align-items:center}.mrow .lb{flex:1;font-size:14px}.mrow input[type=number]{width:76px}
 input.tx,input[type=date],input[type=time]{flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 15px var(--sf)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;margin:10px -14px 6px;padding:8px 14px;background:linear-gradient(var(--bg) 72%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.seg{position:relative;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px;isolation:isolate}
+.seg button{all:unset;cursor:pointer;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 1px 7px;border-radius:12px;color:var(--mut);font:600 11.5px/1.1 var(--sf);transition:color .2s}
+.seg button svg{width:18px;height:18px}.seg button.on{color:var(--ink)}.seg button.on svg{color:var(--acc)}
+.seg button:focus-visible{outline:2px solid var(--acc)}
+.seg .ind{position:absolute;z-index:0;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/5);border-radius:12px;background:linear-gradient(180deg,rgba(91,147,255,.24),rgba(91,147,255,.09));box-shadow:inset 0 0 0 1px rgba(91,147,255,.5),0 6px 16px rgba(91,147,255,.16);transition:transform .3s cubic-bezier(.3,.8,.3,1)}
+.cnt{position:absolute;top:2px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--red);color:#fff;font:700 10px/16px var(--sf);text-align:center}
+.lv{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,85,96,.65)}70%,100%{box-shadow:0 0 0 7px rgba(255,85,96,0)}}
+.mr{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;cursor:pointer;transition:border-color .2s}
+.mr:active{border-color:var(--acc)}
+.lgs{display:flex}.lgs .lg{border:2px solid var(--card);margin-left:-9px}.lgs .lg:first-child{margin-left:0}
+.mtl{font-size:15px;line-height:1.3;min-width:0}.mtl b{font:700 18px var(--df);letter-spacing:.03em;color:var(--acc)}
+.st{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.live{display:inline-flex;align-items:center;gap:6px;padding:1px 9px;border-radius:99px;background:rgba(255,85,96,.14);border:1px solid rgba(255,85,96,.4);color:var(--red);font:700 11px var(--sf);letter-spacing:.07em}
+.sc{font:700 22px/1 var(--df)}.mn{font-size:12px;font-weight:600;color:var(--red)}
+.ftb{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+@media (prefers-reduced-motion:reduce){.seg .ind{transition:none}.lv{animation:none}}
 </style>
 </head>
 <body>
@@ -110,9 +128,14 @@ M(8,'Bundesliga','Leverkusen','Leipzig',D(3,15,30),[[1.9,2.0],[15,13],[11,12],[2
 M(9,'Serie A','Inter','Juventus',D(0,20,45),[[2.2,2.5],[13,11],[12.5,13.8],[20,21],[5.6,4.5]]),
 M(10,'Serie A','Milan','Naples',D(1,18,0),[[2.3,2.1],[12,14],[12,12.5],[22,19],[5.0,5.5]]),
 M(11,'Ligue des champions','Atlético','Benfica',D(3,21,0),[[2.6,2.3],[11,12],[13,12],[19,21],[4.8,5.2]]),
-M(12,'Europa League','Roma','Villarreal',D(2,21,0),[[2.1,2.3],[12,11],[12.5,12],[20,19],[5.3,4.7]])]}};
+M(12,'Europa League','Roma','Villarreal',D(2,21,0),[[2.1,2.3],[12,11],[12.5,12],[20,19],[5.3,4.7]]),
+{...M(13,'Premier League','Aston Villa','Brighton',new Date(Date.now()-37*6e4),[[2.0,1.9],[13,12],[11,10.5],[19,20],[5.5,5.2]]),live:{score:[1,0]}},
+{...M(14,'La Liga','Atlético','Betis',new Date(Date.now()-68*6e4),[[2.4,2.1],[12,11],[12.5,12],[20,18],[4.9,5.1]]),live:{score:[1,1]}},
+{...M(15,'Serie A','Atalanta','Torino',new Date(Date.now()-26*36e5),[[2.1,2.3],[14,10],[11.5,12],[20,19],[5.8,4.6]]),done:true,score:[2,1],real:{yc:[2,3],sh:[16,9],fo:[10,13],th:[21,18],co:[7,3]}},
+{...M(16,'Ligue 1','Nice','Lille',new Date(Date.now()-5*36e5),[[1.9,2.0],[12,11],[11,11.5],[19,18],[5.1,5.3]]),done:true,score:[0,0],real:{yc:[1,2],sh:[10,12],fo:[12,9],th:[17,22],co:[4,6]}}]}};
 const LEAGUES={39:"Premier League",140:"La Liga",61:"Ligue 1",78:"Bundesliga",135:"Serie A",2:"Ligue des champions",3:"Europa League"};
 const LAST_N=8,MAX_MATCHES=10,DAYS_AHEAD=1;
+const apiState=x=>{const s=x.fixture.status&&x.fixture.status.short,g=x.goals||{};if(['1H','HT','2H','ET','BT','P','LIVE'].includes(s))return{live:{min:x.fixture.status.elapsed,score:[g.home||0,g.away||0],ht:s=='HT'}};if(['FT','AET','PEN'].includes(s))return{done:true,score:[g.home||0,g.away||0]};return{}};
 const Api={
  async get(p){const r=await fetch(CONFIG.API_BASE_URL+p);const j=await r.json().catch(()=>({}));
   if(!r.ok||(j.errors&&Object.keys(j.errors).length))throw new Error(Object.values(j.errors||{})[0]||"HTTP "+r.status);return j.response},
@@ -145,7 +168,7 @@ const Api={
    try{st(`Analyse du match ${n+1}/${fx.length} (le premier chargement prend quelques minutes)…`);
     const h=await this.teamAvg(x.teams.home.id),a=await this.teamAvg(x.teams.away.id),odds=await this.odds(x.fixture.id),stt={};
     for(const k of ["yc","sh","fo","th","co"])stt[k]=[h[k],a[k]];
-    push({id:x.fixture.id,comp:LEAGUES[x.league.id],home:x.teams.home.name,away:x.teams.away.name,homeLogo:x.teams.home.logo,awayLogo:x.teams.away.logo,kickoff:new Date(x.fixture.date),st:stt,odds});n++}
+    push({id:x.fixture.id,comp:LEAGUES[x.league.id],home:x.teams.home.name,away:x.teams.away.name,homeLogo:x.teams.home.logo,awayLogo:x.teams.away.logo,kickoff:new Date(x.fixture.date),st:stt,odds,...apiState(x)});n++}
    catch(e){st(`API-Football a répondu : « ${e.message} » (${n} match(s) chargé(s)).`);return}}
   if(n)st("")}
 };
@@ -219,7 +242,7 @@ function rail(){const{rs,fl,tp,cb}=calc();
 
 try{Object.assign(S.P,JSON.parse(localStorage.getItem("pl")||"{}"))}catch(e){}
 const sp=(t,k,v)=>{S.P[t][k]=v;try{localStorage.setItem("pl",JSON.stringify(S.P))}catch(e){}};
-const inR=m=>S.r=='all'||(S.r=='done'?!!m.done:!m.done&&(S.r=='today')===same(m.kickoff,new Date()));
+const inR=m=>S.r=='all'||(S.r=='live'?!!m.live:S.r=='done'?!!m.done:S.r=='today'?same(m.kickoff,new Date()):!m.done&&!m.live&&!same(m.kickoff,new Date())&&m.kickoff>new Date());
 const esc=x=>(x||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
 const mono=n=>{const w=n.replace(/[^A-Za-zÀ-ÿ ]/g,' ').trim().split(/\s+/);const t=(w.length>1?w[0][0]+w[1][0]:n.slice(0,3)).toUpperCase();let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return`<span class="lg" style="background:hsl(${h} 45% 32%)">${esc(t)}</span>`};
 const lg=(n,u)=>u?`<img class="lg" src="${esc(u)}" alt="${esc(n)}" loading="lazy" onerror="this.outerHTML=mono(this.alt)">`:mono(n);
@@ -289,21 +312,29 @@ function tableau(){const rs=S.rows.map((r,i)=>({m:ALL.find(x=>x.id==r.id),k:r.k,
 function vF(){const cs=[...S.comps];let h=`<h2>Filtre</h2>`;
  if(!cs.length)h+=`<div class="card">Aucun championnat coché. Coche-en un dans l'onglet Matchs.<div class="row"><button class="chip" onclick="go('m')">Aller dans Matchs</button></div></div>`;
  for(const c of cs){const ms=ALL.filter(m=>m.comp==c&&inR(m));
-  h+=`<div class="card"><div class="row" style="margin:0"><b style="color:var(--red);font-size:18px">${c}</b><button class="chip" data-c="${c}" onclick="tc(this.dataset.c,false)">Retirer</button></div><div class="sub">${ms.length} match(s) · ${{today:"aujourd'hui",up:'à venir',done:'terminés',all:'tous'}[S.r]}</div>`+
+  h+=`<div class="card"><div class="row" style="margin:0"><b style="color:var(--red);font-size:18px">${c}</b><button class="chip" data-c="${c}" onclick="tc(this.dataset.c,false)">Retirer</button></div><div class="sub">${ms.length} match(s) · ${{live:'en direct',today:"aujourd'hui",up:'à venir',done:'terminés',all:'tous'}[S.r]}</div>`+
   CR.map(k=>{const o=cfg(c,k.k),dis=k.k=='th'&&MODE=='csv';
    return `<div class="mkt"><label><input type="checkbox" data-c="${c}" data-k="${k.k}" ${o.on?'checked':''} ${dis?'disabled':''} onchange="tm(this.dataset.c,this.dataset.k,this.checked)"> ${k.i} ${k.n}${dis?' <span class="sub">(indisponible)</span>':''}</label>`+
    (o.on?`<div class="sub" style="margin-top:6px">Lignes « Plus de » (garde les matchs dont la moyenne combinée atteint la ligne)</div><div class="lines">${[...new Set([...LN[k.k],...o.extra])].sort((a,b)=>a-b).map(l=>`<button class="chip sm ${o.sel.includes(l)?'on':''}" data-c="${c}" data-k="${k.k}" data-l="${l}" onclick="tl(this.dataset.c,this.dataset.k,+this.dataset.l)">${f1(l)}</button>`).join('')}<input class="ln" type="number" step=".5" placeholder="+ ligne" data-c="${c}" data-k="${k.k}" onchange="al(this.dataset.c,this.dataset.k,this.value)"></div>`:'')+`</div>`}).join('')+
   `<div class="row"><button class="chip on" data-c="${c}" onclick="runFilter(this.dataset.c)">Filtrer ${c}</button></div></div>`}
  if(S.msg)h+=`<div class="sub">${esc(S.msg)}</div>`;
  return h+tableau()+prompts()}
-function vM(){const b=base();
- const rg=[['today',"Aujourd'hui"],['up','À venir'],['done','Terminés'],['all','Tous']].map(r=>`<button class="chip ${S.r==r[0]?'on':''}" onclick="S.r='${r[0]}';go()">${r[1]}</button>`).join('');
- let h=`<div class="chips">${rg}</div><div class="sub">Coche un championnat pour passer au filtre.</div>`;
- if(!b.length)h+=`<div class="card">Aucun match sur cette période. Essayez « Tous ».</div>`;
+const RT=[['live','En direct','<circle cx="12" cy="12" r="2.2"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.6 4.6a10.4 10.4 0 0 0 0 14.8M19.4 4.6a10.4 10.4 0 0 1 0 14.8"/>'],['today',"Aujourd'hui",'<rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/>'],['up','À venir','<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],['done','Terminés','<circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.7 2.7 4.9-5.4"/>'],['all','Tous','<circle cx="12" cy="12" r="8.5"/><path d="M12 8l3.6 2.6-1.4 4.2H9.8L8.4 10.6z"/>']];
+const hh=d=>String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');
+const raf=typeof requestAnimationFrame==='function'?requestAnimationFrame:f=>setTimeout(f,0);
+function tabAnim(){const i=RT.findIndex(t=>t[0]==S.r),e=document.querySelector('.ind');if(!e||!e.style)return;raf(()=>raf(()=>{e.style.transform='translateX('+i*100+'%)';S.pi=i}))}
+const stat=m=>{
+ if(m.live){const mn=m.live.min!=null?m.live.min:Math.max(1,Math.min(90,Math.floor((Date.now()-m.kickoff)/6e4)));return `<span class="live"><i class="lv"></i>LIVE</span><b class="sc">${m.live.score[0]} – ${m.live.score[1]}</b><span class="mn">${m.live.ht?'Mi-temps':mn+"'"}</span>`}
+ if(m.done)return `<span class="ftb">Terminé</span><b class="sc">${m.score[0]} – ${m.score[1]}</b>`;
+ if(m.kickoff<new Date()){const a=Math.round((Date.now()-m.kickoff)/6e4);return a<=150?`<span class="sub">Commencé il y a ${a} min</span><span class="sub">score indisponible</span>`:`<span class="sub">Résultat en attente</span>`}
+ const ic=S.rows.filter(r=>r.id==m.id).map(r=>CR.find(x=>x.k==r.k).i).join('');return ic?`<span class="tag ok">${ic}</span>`:''};
+const mrow=m=>`<div class="card mr" onclick="od(${m.id})"><div class="lgs">${lg(m.home,m.homeLogo)}${lg(m.away,m.awayLogo)}</div><div class="mtl"><b>${hh(m.kickoff)}</b> — ${m.home} vs ${m.away}${S.r!='today'&&S.r!='live'?`<div class="sub">${dl(m.kickoff)}</div>`:''}</div><div class="st">${stat(m)}</div></div>`;
+function vM(){const b=base().sort((x,y)=>x.kickoff-y.kickoff),nl=ALL.filter(m=>m.live).length,ti=RT.findIndex(t=>t[0]==S.r),pi=S.pi==null?ti:S.pi;
+ const tabs=`<div class="tabs"><div class="seg" role="tablist"><span class="ind" style="transform:translateX(${pi*100}%)"></span>`+RT.map(t=>`<button role="tab" aria-selected="${S.r==t[0]}" class="${S.r==t[0]?'on':''}" onclick="S.r='${t[0]}';go()">${t[0]=='live'&&nl?`<span class="cnt">${nl}</span>`:''}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t[2]}</svg><span>${t[1]}</span></button>`).join('')+`</div></div>`;
+ let h=tabs+`<div class="sub">${S.r=='live'?'Matchs en cours.':'Classés par heure de coup d\'envoi.'} Coche un championnat pour passer au filtre.</div>`;
+ if(!b.length)h+=S.r=='live'?`<div class="card">Aucun match en direct pour le moment.${MODE=='csv'?`<div class="sub" style="margin-top:6px">La source gratuite actuelle ne fournit pas les scores en direct : un match commencé apparaît sous « Aujourd'hui », avec le temps écoulé depuis le coup d'envoi.</div>`:''}</div>`:`<div class="card">Aucun match sur cette période. Essayez « Tous ».</div>`;
  for(const c of [...new Set(b.map(m=>m.comp))]){const n=S.rows.filter(r=>{const m=ALL.find(x=>x.id==r.id);return m&&m.comp==c}).length;
-  h+=`<label class="comp ck"><input type="checkbox" data-c="${c}" ${S.comps.has(c)?'checked':''} onchange="tc(this.dataset.c,this.checked)"> ${c}${n?` <span class="tag ok">${n} au tableau</span>`:''}</label>`;
-  for(const m of b.filter(x=>x.comp==c)){const ic=S.rows.filter(r=>r.id==m.id).map(r=>CR.find(x=>x.k==r.k).i).join('');
-   h+=`<div class="card m" style="cursor:pointer" onclick="od(${m.id})"><div class="t">${hm(m.kickoff)}<br>${dl(m.kickoff)}</div>${two(m)}${m.done?`<span class="tag">${m.score[0]}–${m.score[1]}</span>`:ic?`<span class="tag ok">${ic}</span>`:''}</div>`}}
+  h+=`<label class="comp ck"><input type="checkbox" data-c="${c}" ${S.comps.has(c)?'checked':''} onchange="tc(this.dataset.c,this.checked)"> ${c}${n?` <span class="tag ok">${n} au tableau</span>`:''}</label>`+b.filter(x=>x.comp==c).map(mrow).join('')}
  return h+manualForm()+`<details class="card"><summary>Source des données : ${{demo:'démonstration',api:'API-Football',csv:'football-data.co.uk (CSV gratuit)'}[MODE]}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration.</p></details>`}
 
 function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Ajoute des matchs au tableau dans Filtre, puis touche Démarrer.');
@@ -340,9 +371,10 @@ function vD(){const m=ALL.find(x=>x.id==S.det);if(!m){S.det=null;return''}
  (S.rows.some(r=>r.id==m.id)?`<h2>Pronostics et justifications</h2>`+tipsOf(m).map(t=>`<div class="card"><div class="row" style="margin:0"><div><b>Plus de ${f1(t.line)} ${t.c.n.toLowerCase()}</b><div class="sub"><span class="pp ${pcls(t.p)}">${pc(t.p)}</span></div></div><div class="big">${f2(t.odd)}</div></div>${why(t)}</div>`).join(''):`<h2>Pronostics</h2><div class="card">Aucun pronostic pour ce match : filtre-le dans l'onglet Filtre pour obtenir ses pronostics et leurs justifications.</div>`)+
  `<div class="sub">Source : ${{demo:'données de démonstration',api:'API-Football',csv:'football-data.co.uk'}[MODE]}. Moyennes sur les derniers matchs de championnat de chaque équipe.</div>`}
 function od(id){S.det=id;scrollTo(0,0);go()}
-function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML=S.det!=null?vD():{m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]()}
+function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML=S.det!=null?vD():{m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]();tabAnim()}
 function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
 $('#src').textContent={demo:'Démo',api:'API-Football',csv:'Données CSV'}[MODE];
+const _iv=setInterval(()=>{const a=document.activeElement;if(S.v=='m'&&S.r=='live'&&S.det==null&&!(a&&/INPUT|TEXTAREA/.test(a.tagName||'')))go()},60000);if(_iv&&_iv.unref)_iv.unref();
 go();
 (async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;mergeManual();go();loadLogos()}
 catch(e){$('#st').textContent='';mergeManual();go();$('#app').insertAdjacentHTML('afterbegin',`<div class="card">Impossible de charger les données (${e.message}). Vérifiez la clé côté serveur ou <a href="?demo" style="color:var(--acc)">ouvrez le mode démonstration</a>.</div>`)}})();
