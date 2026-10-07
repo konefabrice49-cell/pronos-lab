@@ -46,8 +46,68 @@ function logosRoute(res) {
   return send(202, { pending: true });
 }
 
+// Scores en direct : flux public de ESPN (non officiel, sans clé), uniquement pour les championnats de l'appli, cache 45 s
+const ESPN = { "eng.1": "Premier League", "esp.1": "La Liga", "fra.1": "Ligue 1", "ger.1": "Bundesliga", "ita.1": "Serie A", "uefa.champions": "Ligue des champions", "uefa.europa": "Europa League",
+  "eng.2": "Championship", "ger.2": "2. Bundesliga", "esp.2": "Segunda División", "fra.2": "Ligue 2", "ita.2": "Serie B", "ned.1": "Eredivisie", "por.1": "Primeira Liga", "bel.1": "Pro League belge",
+  "sco.1": "Premiership écossaise", "tur.1": "Süper Lig", "gre.1": "Super League grecque", "eng.3": "League One", "eng.4": "League Two", "sco.2": "Championship écossaise", "sco.3": "League One écossaise", "sco.4": "League Two écossaise", "eng.5": "National League" };
+let liveCache = { t: 0, v: [] };
+async function liveRoute(res) {
+  const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
+  if (Date.now() - liveCache.t < 45e3) return send(200, liveCache.v);
+  const out = [], slugs = Object.keys(ESPN);
+  for (let i = 0; i < slugs.length; i += 6) {
+    await Promise.all(slugs.slice(i, i + 6).map(async sl => {
+      try {
+        const r = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/scoreboard", { headers: { "User-Agent": "Mozilla/5.0" } });
+        if (!r.ok) return;
+        const j = await r.json();
+        for (const e of j.events || []) {
+          const c = (e.competitions || [])[0]; if (!c) continue;
+          const H = (c.competitors || []).find(x => x.homeAway === "home"), A = (c.competitors || []).find(x => x.homeAway === "away"); if (!H || !A) continue;
+          const st = c.status || e.status || {}, ty = st.type || {};
+          const ev = (c.details || []).filter(d => d && (d.scoringPlay || d.yellowCard || d.redCard)).sort((x, y) => ((x.clock || {}).value || 0) - ((y.clock || {}).value || 0)).map(d => ({
+            s: String((d.team || {}).id) === String(H.team.id) ? "h" : "a", m: (d.clock || {}).displayValue || "", n: ((d.athletesInvolved || [])[0] || {}).shortName || ((d.athletesInvolved || [])[0] || {}).displayName || "",
+            g: !!d.scoringPlay, y: !!d.yellowCard, r: !!d.redCard, p: !!d.penaltyKick, o: !!d.ownGoal }));
+          out.push({ comp: ESPN[sl], home: H.team.displayName, away: A.team.displayName, hl: H.team.logo, al: A.team.logo, date: e.date, state: ty.state, name: ty.name, clock: st.displayClock, hs: +H.score || 0, as: +A.score || 0, ev, id: e.id, lg: sl, hid: H.team.id, aid: A.team.id });
+        }
+      } catch {}
+    }));
+  }
+  liveCache = { t: Date.now(), v: out };
+  send(200, out);
+}
+
+// Détail d'un match (chronologie : buts, passes, cartons, remplacements ; statistiques), cache 30 s
+const mcache = {};
+async function matchRoute(req, res) {
+  const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
+  const u = new URL(req.url, "http://x"), sl = u.searchParams.get("league"), ev = u.searchParams.get("event"), hid = u.searchParams.get("h");
+  if (!ESPN[sl] || !/^\d{4,12}$/.test(ev || "")) return send(400, { error: "Paramètres invalides" });
+  const key = sl + ev; if (mcache[key] && Date.now() - mcache[key].t < 30e3) return send(200, mcache[key].v);
+  try {
+    const r = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/summary?event=" + ev, { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (!r.ok) return send(502, { error: "ESPN a répondu " + r.status });
+    const j = await r.json(), side = t => String((t || {}).id) === String(hid) ? "h" : "a";
+    const events = (j.keyEvents || []).map(e => {
+      const ty = ((e.type || {}).text || "").toLowerCase(), tx = e.text || e.shortText || "", P = (e.participants || []).map(p => (p.athlete || {}).displayName).filter(Boolean);
+      let k = null;
+      if (/half ?time/.test(ty)) k = "ht"; else if (/full time|end regular time|end of match/.test(ty)) k = "ft";
+      else if (/own goal/.test(ty)) k = "og"; else if (/penalty - scored|^goal|goal -|^goal$/.test(ty) || (e.scoringPlay && !/miss|disallow/.test(ty))) k = "g";
+      else if (/second yellow|red card/.test(ty)) k = "r"; else if (/yellow/.test(ty)) k = "y"; else if (/substitution/.test(ty)) k = "sub"; else return null;
+      const o = { s: side(e.team), k, m: (e.clock || {}).displayValue || "", t: (e.clock || {}).value || 0, n: P[0] || "", p: /penalty/.test(ty) };
+      if (k === "g" || k === "og") { const a = /Assisted by ([^.]+?)(?: with | following |\.|$)/i.exec(tx); if (a) o.a = a[1].trim(); }
+      if (k === "sub") { const m2 = /([^.]+?) replaces ([^.]+?)(?: because.*|\.)?$/i.exec(tx.replace(/^Substitution,[^.]*\.\s*/i, "")); o.on = m2 ? m2[1].trim() : P[0] || ""; o.off = m2 ? m2[2].trim() : P[1] || ""; }
+      return o;
+    }).filter(Boolean).sort((a, b) => a.t - b.t);
+    const stats = ((j.boxscore || {}).teams || []).map(t => ({ s: side(t.team), st: (t.statistics || []).map(x => ({ n: x.name, l: x.label, v: x.displayValue })) }));
+    const out = { events, stats }; mcache[key] = { t: Date.now(), v: out }; send(200, out);
+  } catch (e) { send(502, { error: "Réponse illisible" }); }
+}
+
 http.createServer(async (req, res) => {
   if (req.url === "/logos") return logosRoute(res);
+  if (req.url === "/live") return liveRoute(res);
+  if (req.url.startsWith("/match?")) return matchRoute(req, res);
   if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h
     const p = req.url.slice(4);
     if (!/^\/(fixtures\.csv|mmz4281\/\d{4}\/(E0|E1|E2|E3|EC|SC0|SC1|SC2|SC3|SP1|SP2|F1|F2|D1|D2|I1|I2|N1|P1|B1|T1|G1)\.csv)$/.test(p)) { res.writeHead(403); return res.end(); }
