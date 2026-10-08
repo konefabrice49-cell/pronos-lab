@@ -50,19 +50,30 @@ function logosRoute(res) {
 const ESPN = { "eng.1": "Premier League", "esp.1": "La Liga", "fra.1": "Ligue 1", "ger.1": "Bundesliga", "ita.1": "Serie A", "uefa.champions": "Ligue des champions", "uefa.europa": "Europa League",
   "ned.1": "Eredivisie", "por.1": "Primeira Liga", "bel.1": "Pro League belge", "sco.1": "Premiership écossaise", "tur.1": "Süper Lig", "gre.1": "Super League grecque" };
 let liveCache = { t: 0, v: [] };
-async function liveRoute(res) {
+async function liveRoute(res, debug) {
   const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
-  if (Date.now() - liveCache.t < 45e3) return send(200, liveCache.v);
-  const out = [], slugs = Object.keys(ESPN);
+  if (!debug && Date.now() - liveCache.t < 45e3) return send(200, liveCache.v);
+  const out = [], slugs = Object.keys(ESPN), dbg = {};
   for (let i = 0; i < slugs.length; i += 6) {
     await Promise.all(slugs.slice(i, i + 6).map(async sl => {
       try {
-        // d'abord la période hier → +4 jours (calendrier complet), sinon le tableau par défaut d'ESPN
-        const base = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/scoreboard", fd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
+        // période hier → +4 jours (calendrier complet), puis tableau par défaut ; en cas d'erreur du site d'ESPN, deuxième adresse (site.web)
+        const fd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, ""), log = [];
         let j = null;
-        for (const u of [base + "?dates=" + fd(Date.now() - 864e5) + "-" + fd(Date.now() + 4 * 864e5) + "&limit=200", base]) {
-          try { const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } }); if (!r.ok) continue; const x = await r.json(); if ((x.events || []).length) { j = x; break; } } catch {}
+        for (const h of ["site.api.espn.com", "site.web.api.espn.com"]) {
+          const base = "https://" + h + "/apis/site/v2/sports/soccer/" + sl + "/scoreboard", w = h.includes(".web.") ? "web-" : "";
+          let failed = false;
+          for (const [nm, u] of [[w + "période", base + "?dates=" + fd(Date.now() - 864e5) + "-" + fd(Date.now() + 4 * 864e5) + "&limit=200"], [w + "défaut", base]]) {
+            try {
+              const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } });
+              if (!r.ok) { failed = true; log.push(nm + ":" + r.status); continue; }
+              const x = await r.json(), n = (x.events || []).length; log.push(nm + ":" + n);
+              if (n) { j = x; break; }
+            } catch { failed = true; log.push(nm + ":erreur"); }
+          }
+          if (j || !failed) break;
         }
+        dbg[ESPN[sl]] = { evenements: j ? (j.events || []).length : 0, essais: log };
         if (!j) return;
         for (const e of j.events || []) {
           const c = (e.competitions || [])[0]; if (!c) continue;
@@ -76,6 +87,7 @@ async function liveRoute(res) {
       } catch {}
     }));
   }
+  if (debug) return send(200, { total: out.length, championnats: dbg });
   liveCache = { t: Date.now(), v: out };
   send(200, out);
 }
@@ -109,7 +121,7 @@ async function matchRoute(req, res) {
 
 http.createServer(async (req, res) => {
   if (req.url === "/logos") return logosRoute(res);
-  if (req.url === "/live") return liveRoute(res);
+  if (req.url.split("?")[0] === "/live") return liveRoute(res, req.url.includes("debug"));
   if (req.url.startsWith("/match?")) return matchRoute(req, res);
   if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h
     const p = req.url.slice(4);
