@@ -57,9 +57,13 @@ async function liveRoute(res) {
   for (let i = 0; i < slugs.length; i += 6) {
     await Promise.all(slugs.slice(i, i + 6).map(async sl => {
       try {
-        const r = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/scoreboard", { headers: { "User-Agent": "Mozilla/5.0" } });
-        if (!r.ok) return;
-        const j = await r.json();
+        // d'abord la période hier → +4 jours (calendrier complet), sinon le tableau par défaut d'ESPN
+        const base = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/scoreboard", fd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
+        let j = null;
+        for (const u of [base + "?dates=" + fd(Date.now() - 864e5) + "-" + fd(Date.now() + 4 * 864e5) + "&limit=200", base]) {
+          try { const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } }); if (!r.ok) continue; const x = await r.json(); if ((x.events || []).length) { j = x; break; } } catch {}
+        }
+        if (!j) return;
         for (const e of j.events || []) {
           const c = (e.competitions || [])[0]; if (!c) continue;
           const H = (c.competitors || []).find(x => x.homeAway === "home"), A = (c.competitors || []).find(x => x.homeAway === "away"); if (!H || !A) continue;
