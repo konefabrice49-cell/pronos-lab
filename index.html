@@ -204,16 +204,21 @@ const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, faut
  async text(p){const r=await fetch("/csv"+p);if(!r.ok)throw new Error("HTTP "+r.status);return r.text()},
  parse(t){const L=t.replace(/^(\uFEFF|ï»¿)/,"").trim().split(/\r?\n/),h=L[0].split(",");return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o})},
  dt(d,t){const[a,b,c]=d.split("/"),[hh,mm]=(t||"12:00").split(":").map(Number);return new Date(c.length==2?2000+ +c:+c,+b-1,+a,hh,mm)},
+ async statsFor(comp,home,away){const d=Object.keys(this.DIVS).find(k=>this.DIVS[k]===comp);if(!d||!this.avg||!this.res)return null;
+  if(!this.res[d]){try{this.res[d]=this.parse(await this.text(`/mmz4281/${this.code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}catch(e){this.res[d]=[]}}
+  const rows=this.res[d],names=[...new Set(rows.flatMap(r=>[r.HomeTeam,r.AwayTeam]))],pick=n=>{const c=names.filter(x=>sameT(x,n));return c.length===1?c[0]:null};
+  const hn=pick(home),an=pick(away);if(!hn||!an)return null;const h=this.avg(rows,hn),a=this.avg(rows,an);if(!h||!a)return null;
+  const st={};for(const k of ["yc","sh","fo","th","co"])st[k]=[h[k],a[k]];return{st,info:{home:h._i,away:a._i}}},
  async matches(push){
   const st=t=>{const e=document.getElementById("st");if(e)e.textContent=t};
   st("Chargement du calendrier…");
   const now=new Date(),from=now.getTime()-3*36e5,lim=now.getTime()+4*864e5;
   const fx=this.parse(await this.text("/fixtures.csv")).filter(x=>this.DIVS[x.Div]&&x.HomeTeam&&x.Date).map(x=>({...x,k:this.dt(x.Date,x.Time)}))
    .filter(x=>x.k>=from&&x.k<=lim).sort((a,b)=>{const o=Object.keys(this.DIVS);return o.indexOf(a.Div)-o.indexOf(b.Div)||a.k-b.k}).slice(0,MAX_MATCHES);
-  const y=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1,p2=n=>String(n%100).padStart(2,"0"),code=p2(y)+p2(y+1),res={};
+  const y=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1,p2=n=>String(n%100).padStart(2,"0"),code=this.code=p2(y)+p2(y+1),res=this.res={};
   for(const d of [...new Set([...fx.map(x=>x.Div),"E0","SP1","F1","D1","I1"])]){st("Chargement des statistiques : "+this.DIVS[d]+"…");
    try{res[d]=this.parse(await this.text(`/mmz4281/${code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}catch(e){res[d]=[]}}
-  const avg=(rows,team)=>{const g=rows.filter(r=>r.HomeTeam==team||r.AwayTeam==team).slice(-LAST_N);if(g.length<3)return null;
+  const avg=this.avg=(rows,team)=>{const g=rows.filter(r=>r.HomeTeam==team||r.AwayTeam==team).slice(-LAST_N);if(g.length<3)return null;
    const a={yc:0,sh:0,fo:0,th:0,co:0};
    for(const r of g){const h=r.HomeTeam==team,q=h?["HY","HS","HF","HC"]:["AY","AS","AF","AC"];a.yc+=+r[q[0]]||0;a.sh+=+r[q[1]]||0;a.fo+=+r[q[2]]||0;a.co+=+r[q[3]]||0}
    const fm=g.slice(-5).map(r=>{const h=r.HomeTeam==team,f=+r[h?"FTHG":"FTAG"],c=+r[h?"FTAG":"FTHG"];return f>c?"V":f<c?"D":"N"}).join("");let bm=0,be=0;
@@ -362,14 +367,17 @@ function mergeLive(list){
  for(const m of ALL)if(m.liveSrc){delete m.live;delete m.liveSrc}
  let ch=0;const now=Date.now();
  for(const e of list){const k=new Date(e.date);
-  if(e.state!=='in'&&!(e.state==='post'&&k<now&&now-k<36*36e5))continue;
+  const pre=e.state==='pre'&&k.getTime()>now-3*36e5&&k.getTime()<now+4*864e5;
+  if(e.state!=='in'&&!pre&&!(e.state==='post'&&k<now&&now-k<36*36e5))continue;
   let m=ALL.find(x=>!x.manual&&!x.noStats&&x.comp===e.comp&&Math.abs(x.kickoff-k)<4*36e5&&(sameT(x.home,e.home)||sameT(x.away,e.away)));
   if(!m){const key=e.comp+'|'+e.home+'|'+e.away+'|'+e.date;m=ALL.find(x=>x.liveKey===key);
    if(!m){m={id:LIVEID++,comp:e.comp,home:e.home,away:e.away,kickoff:k,st:{yc:[0,0],sh:[0,0],fo:[0,0],th:[0,0],co:[0,0]},noStats:true,liveKey:key};ALL.push(m)}}
   if(!m.homeLogo&&e.hl)m.homeLogo=e.hl;if(!m.awayLogo&&e.al)m.awayLogo=e.al;
+  m.kickoff=k;
+  if(m.noStats&&!m.enr&&MODE==='csv'){m.enr=1;Csv.statsFor(m.comp,m.home,m.away).then(r=>{if(r){m.st=r.st;m.info=r.info;delete m.noStats;if(S.det==null)go()}}).catch(()=>{})}
   m.events=e.ev||[];m.espn={lg:e.lg,id:e.id,h:e.hid};
   if(e.state==='in'){m.live={score:[e.hs,e.as],min:e.clock||null,ht:e.name==='STATUS_HALFTIME'};m.liveSrc='espn';delete m.done}
-  else if(!m.real&&!m.done){m.done=true;m.score=[e.hs,e.as]}
+  else if(e.state==='post'&&!m.real&&!m.done){m.done=true;m.score=[e.hs,e.as]}
   ch++}
  return ch}
 async function loadLive(){if(MODE==='demo')return;try{const r=await fetch('/live');if(!r.ok)return;mergeLive(await r.json());if(S.v==='m'&&S.det==null)go()}catch(e){}}
