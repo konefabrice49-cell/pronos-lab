@@ -18,7 +18,7 @@ main{max-width:720px;margin:0 auto;padding:14px 14px 110px}
 header{display:flex;justify-content:space-between;align-items:center;gap:10px}
 h1{font:700 32px/1 var(--df);margin:0}
 .sub{color:var(--mut);font-size:13px}
-.rail{position:fixed;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.rail{position:fixed;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:repeat(6,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .rail button{all:unset;cursor:pointer;text-align:center;padding:8px 2px 7px;border-top:3px solid transparent;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:1px}
 .rail button:focus-visible,.chip:focus-visible{outline:2px solid var(--acc)}
 .rail .ic{display:flex;align-items:center;gap:4px}
@@ -125,6 +125,32 @@ input.tx,input[type=date],input[type=time]{flex:1;min-width:0;padding:8px;border
 .calr{display:flex;align-items:center;gap:8px;margin:2px 0 8px}
 .calb{position:relative;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 13.5px var(--sf);cursor:pointer}
 .calb svg{color:var(--acc)}.calb input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.zzb{all:unset;cursor:pointer;padding:6px 10px;border-radius:99px;background:linear-gradient(180deg,#ff5560,#d92d3a);color:#fff;font:700 12px var(--sf);letter-spacing:.02em;white-space:nowrap}.zzb:focus-visible{outline:2px solid var(--acc)}
+.zzban{margin:10px 0 4px;padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(255,85,96,.18),rgba(91,147,255,.14));border:1px solid var(--line)}
+.zzban b{display:block;font:700 19px/1.2 var(--df);letter-spacing:.03em}.zzban span{display:block;margin-top:4px;font-size:12.5px;color:var(--mut)}
+.zzsec h3{font:700 15px var(--sf);letter-spacing:.06em;margin:22px 0 2px}.zzgh{margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--line);font:700 17px var(--df);color:var(--red);letter-spacing:.02em}
+.zzc{padding:12px}.zzr{display:grid;grid-template-columns:minmax(0,1fr) 30px 64px 30px minmax(0,1fr);gap:8px;align-items:center}
+.zzn{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.zzn.r{text-align:right}
+.zzm{display:flex;flex-direction:column;align-items:center}.zzs{font:700 20px/1 var(--df);letter-spacing:.04em}.zzm small{font-size:11px;color:var(--mut)}.zzm .zzlv{color:var(--red);font-weight:700}
+.zzfr{display:flex;justify-content:space-between;align-items:center;margin-top:10px}.zzfr small{color:var(--mut);font-size:11px}
+.zzfm{display:inline-flex;gap:3px}.zzfm i{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font:700 10px var(--sf);font-style:normal;color:#fff}
+.zzfm .zzV{background:#1fa463}.zzfm .zzN{background:#8a93ad}.zzfm .zzD{background:#d92d3a}
+.zzp{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;padding:9px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line)}
+.zzg{display:block;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}.zzp b{font-size:14.5px}
+.zzpr{text-align:right}.zzpr small{display:block;font-size:11px;color:var(--mut)}
+.zzpp{font-weight:700;padding:1px 8px;border-radius:99px;border:1px solid currentColor;font-size:12.5px}.zzpp.hi{color:var(--ok)}.zzpp.mid{color:#f5a524}.zzpp.lo{color:var(--red)}
+.zzd{margin-top:8px}.zzd summary{cursor:pointer;color:var(--acc);font-weight:600;font-size:13.5px}.zzd h4{margin:14px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.zzw{margin-top:8px;font-size:13.5px}.zzcols{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px}.zzcol>*{margin-top:4px}.zzmt{margin-top:10px}
+.zzr6{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 1px 5px;border-top:3px solid transparent;color:var(--mut);background:linear-gradient(180deg,rgba(255,85,96,.10),rgba(255,85,96,0))}
+.zzr6 .zzbi{font-size:21px;line-height:1.1}.zzr6 .zzlb{font:800 8.6px/1.15 var(--sf);letter-spacing:0;text-align:center;color:var(--red)}.zzr6.on{border-top-color:var(--red)}.zzr6:focus-visible{outline:2px solid var(--acc)}
+.zzfl{display:flex;gap:8px;margin:6px 0}.zzfl select,.zzfl input{flex:1;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:500 14px var(--sf)}
+.zzpo{padding:12px}.zzpt{margin-bottom:8px;font-size:14px}.zzimg{display:block;width:100%;aspect-ratio:4/5;border-radius:10px;border:1px solid var(--line);background:#fff}
+.zzph{aspect-ratio:4/5;display:grid;place-items:center;border-radius:10px;background:var(--bg);border:1px dashed var(--line);color:var(--mut);font-size:14px}
+.zzbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.zzh3{font:700 15px var(--sf);letter-spacing:.06em;margin:22px 0 6px}
+.zzmod{position:fixed;inset:0;z-index:50;background:rgba(5,9,22,.88);display:grid;place-items:center;padding:14px;overflow:auto}.zzmi{position:relative;width:min(100%,520px)}
+.zzmi img{display:block;width:100%;border-radius:10px;background:#fff}.zzx{all:unset;cursor:pointer;position:absolute;top:-8px;right:-4px;z-index:2;width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:18px}
+.zztoast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:90%;padding:10px 16px;border-radius:99px;background:var(--ink);color:var(--bg);font:600 13.5px var(--sf);opacity:0;pointer-events:none;transition:.25s}.zztoast.on{opacity:1;transform:translate(-50%,0)}
+.zzhr{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:13.5px}.zzhr small{width:100%}.zzhr small.ok{color:var(--ok)}.zzhr small.ko{color:var(--red)}
 </style>
 </head>
 <body>
@@ -273,7 +299,7 @@ const empty=t=>`<div class="card">${t}<div class="row"><button class="chip" oncl
 function rail(){const{rs,fl,tp,cb}=calc();
  const v=[base().length,rs.length,fl.length,tp.flat().length,cb[0]?f2(cb[0].odd):'–'];
  const IC={m:'<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 5h-5L8 10z"/>',f:'<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',a:'<path d="M3 20h5v-5h5v-5h5V5h3"/>',p:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',g:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8"/>'};
- $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')" aria-label="${x[1]}"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[x[0]]}</svg><b>${v[i]}</b></div><span>${x[1]}</span></button>`).join('')}
+ $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')" aria-label="${x[1]}"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[x[0]]}</svg><b>${v[i]}</b></div><span>${x[1]}</span></button>`).join('')+zzBtn()}
 
 try{Object.assign(S.P,JSON.parse(localStorage.getItem("pl")||"{}"))}catch(e){}
 const sp=(t,k,v)=>{S.P[t][k]=v;try{localStorage.setItem("pl",JSON.stringify(S.P))}catch(e){}};
@@ -470,9 +496,185 @@ function vD(){const m=ALL.find(x=>x.id==S.det);if(!m){S.det=null;return''}
  (S.rows.some(r=>r.id==m.id)?`<h2>Pronostics et justifications</h2>`+tipsOf(m).map(t=>`<div class="card"><div class="row" style="margin:0"><div><b>Plus de ${f1(t.line)} ${t.c.n.toLowerCase()}</b><div class="sub"><span class="pp ${pcls(t.p)}">${pc(t.p)}</span></div></div><div class="big">${f2(t.odd)}</div></div>${why(t)}</div>`).join(''):`<h2>Pronostics</h2><div class="card">Aucun pronostic pour ce match : filtre-le dans l'onglet Filtre pour obtenir ses pronostics et leurs justifications.</div>`)+
  `<div class="sub">Source : ${{demo:'données de démonstration',api:'API-Football',csv:'football-data.co.uk'}[MODE]}. Moyennes sur les derniers matchs de championnat de chaque équipe.</div>`}
 function od(id){S.det=id;scrollTo(0,0);go()}
-function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML=S.det!=null?vD():{m:vM,f:vF,a:vA,p:vP,g:vG}[S.v]();tabAnim()}
+function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML=S.det!=null?vD():{m:vM,f:vF,a:vA,p:vP,g:vG,z:vZ}[S.v]();tabAnim()}
 function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
 $('#src').textContent={demo:'Démo',api:'API-Football',csv:'Données CSV'}[MODE];
+// ==================== BOUTON « PRONOSTICS MD ZEZAYE » : page ajoutée à l'interface existante ====================
+// Lit seulement les données déjà chargées par l'appli (ALL, Csv.res) ; aucune autre source, aucune nouvelle API.
+const ZZ={ld:{},demo:{},img:{},P:[],cache:{},cur:null,tok:0},ZS={day:'both',comp:'',team:'',tab:'a'},ZF=[1,1,2,6,24,120,720,5040,40320,362880,3628800];
+const zzE=x=>String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const zzHash=t=>{let h=2166136261;for(const c of String(t))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0};
+function zzRng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function zzDemoRows(comp){if(ZZ.demo[comp])return ZZ.demo[comp];
+ const T=[...new Set(ALL.filter(m=>m.comp===comp).flatMap(m=>[m.home,m.away]))],R=zzRng(zzHash(comp)),rows=[];
+ const po=l=>{let k=0,p=1;const L=Math.exp(-l);do{k++;p*=R()}while(p>L);return k-1};
+ for(let r=0;r<12;r++)for(const h of T){const a=T[Math.floor(R()*T.length)];if(a!==h)rows.push({HomeTeam:h,AwayTeam:a,FTHG:String(po(1.5)),FTAG:String(po(1.1))})}
+ return ZZ.demo[comp]=rows}
+function zzRows(m){
+ if(MODE==='demo')return zzDemoRows(m.comp);
+ if(typeof Csv==='undefined'||!Csv.res||!Csv.DIVS)return null;
+ const d=Object.keys(Csv.DIVS).find(k=>Csv.DIVS[k]===m.comp);if(!d)return null;
+ if(!Csv.res[d]){if(!ZZ.ld[d]&&Csv.text&&Csv.code)ZZ.ld[d]=Csv.text('/mmz4281/'+Csv.code+'/'+d+'.csv').then(t=>{Csv.res[d]=Csv.parse(t).filter(r=>r.HC!==undefined&&r.HC!=='')}).catch(()=>{Csv.res[d]=[]}).then(()=>{if(S.v==='z')go()});return 'load'}
+ return Csv.res[d]}
+function zzName(R,n){const N=[...new Set(R.flatMap(r=>[r.HomeTeam,r.AwayTeam]))];if(N.includes(n))return n;const c=N.filter(x=>sameT(x,n));return c.length===1?c[0]:null}
+function zzTeam(R,name){return R.filter(r=>r.HomeTeam===name||r.AwayTeam===name).map(r=>{const h=r.HomeTeam===name,f=+r[h?'FTHG':'FTAG'],c=+r[h?'FTAG':'FTHG'],sf=parseFloat(r[h?'HS':'AS']),sa=parseFloat(r[h?'AS':'HS']);
+ return{h,f,c,sf:isNaN(sf)?null:sf,sa:isNaN(sa)?null:sa,opp:h?r.AwayTeam:r.HomeTeam,res:f>c?'V':f<c?'D':'N'}}).filter(x=>!isNaN(x.f)&&!isNaN(x.c)&&x.f>=0&&x.c>=0)}
+const zzAv=(a,k)=>{const v=a.map(x=>x[k]).filter(x=>x!=null);return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+const zzCf=p=>p>=.7?['Forte','hi']:p>=.58?['Moyenne','mid']:['Prudente','lo'];
+const zzEv=(k,h,a)=>({'1':h>a,X:h==a,'2':h<a,'1X':h>=a,X2:h<=a,'12':h!=a,O15:h+a>1,U15:h+a<2,O25:h+a>2,U25:h+a<3,O35:h+a>3,U35:h+a<4,BY:h>0&&a>0,BN:h==0||a==0})[k];
+function zzPredict(m){
+ const R=zzRows(m);if(R==='load')return{loading:true};
+ const o={all:[],ctx:null,note:'',xg:null,scores:[],main:null,conf:null,ok:false},A=(g,k,t,p,why)=>o.all.push({g,k,t,p,why});
+ if(R&&R.length){const hn=zzName(R,m.home),an=zzName(R,m.away);
+  if(hn&&an){const H=zzTeam(R,hn),T=zzTeam(R,an),n=R.length,lgH=R.reduce((s,r)=>s+(+r.FTHG||0),0)/n,lgA=R.reduce((s,r)=>s+(+r.FTAG||0),0)/n;
+   o.ctx={hn,an,H,A:T,n,h2h:R.filter(r=>(r.HomeTeam===hn&&r.AwayTeam===an)||(r.HomeTeam===an&&r.AwayTeam===hn))};
+   if(H.length>=4&&T.length>=4&&n>=20&&lgH>0&&lgA>0){
+    const k=3,sh=(x,c,l)=>(x*c+l*k)/(c+k),hh=H.filter(x=>x.h),aa=T.filter(x=>!x.h),rH=H.slice(-5),rA=T.slice(-5);
+    const mix=(sp,re)=>re.length>=3?.6*sp+.4*re.reduce((s,x)=>s+x,0)/re.length:sp,av=(a,key)=>a.length?a.reduce((s,x)=>s+x[key],0)/a.length:0;
+    const gfH=mix(sh(av(hh,'f'),hh.length,lgH),rH.map(x=>x.f)),gaH=mix(sh(av(hh,'c'),hh.length,lgA),rH.map(x=>x.c));
+    const gfA=mix(sh(av(aa,'f'),aa.length,lgA),rA.map(x=>x.f)),gaA=mix(sh(av(aa,'c'),aa.length,lgH),rA.map(x=>x.c));
+    const lh=Math.max(.2,lgH*(gfH/lgH)*(gaA/lgH)),la=Math.max(.2,lgA*(gfA/lgA)*(gaH/lgA));o.xg=[lh,la];
+    let w=0,d=0,l=0,o15=0,o25=0,o35=0,bt=0,tot=0;const sc=[];
+    for(let i=0;i<=9;i++)for(let j=0;j<=9;j++){const p=Math.exp(-lh)*Math.pow(lh,i)/ZF[i]*Math.exp(-la)*Math.pow(la,j)/ZF[j];tot+=p;if(i>j)w+=p;else if(i==j)d+=p;else l+=p;if(i+j>1)o15+=p;if(i+j>2)o25+=p;if(i+j>3)o35+=p;if(i>0&&j>0)bt+=p;if(i<=5&&j<=5)sc.push({s:i+'-'+j,p})}
+    w/=tot;d/=tot;l/=tot;o15/=tot;o25/=tot;o35/=tot;bt/=tot;sc.forEach(x=>x.p/=tot);o.scores=sc.sort((a,b)=>b.p-a.p).slice(0,3);
+    const xgs=`Buts attendus : ${f1(lh)} pour ${m.home}, ${f1(la)} pour ${m.away}.`,
+     base=`${xgs} Calcul : ${hn} (${f1(av(hh,'f'))} marqué(s) et ${f1(av(hh,'c'))} encaissé(s) par match à domicile) contre ${an} (${f1(av(aa,'f'))} marqué(s) et ${f1(av(aa,'c'))} encaissé(s) à l'extérieur), forme des 5 derniers matchs incluse.`;
+    A('Résultat','1',`Victoire ${m.home}`,w,base);A('Résultat','X','Match nul',d,base);A('Résultat','2',`Victoire ${m.away}`,l,base);
+    A('Double chance','1X',`${m.home} ou nul (1X)`,w+d,base);A('Double chance','X2',`Nul ou ${m.away} (X2)`,d+l,base);A('Double chance','12','Pas de match nul (12)',w+l,base);
+    A('Buts','O15','Plus de 1,5 buts',o15,xgs);A('Buts','U15','Moins de 1,5 buts',1-o15,xgs);A('Buts','O25','Plus de 2,5 buts',o25,xgs);A('Buts','U25','Moins de 2,5 buts',1-o25,xgs);
+    A('Buts','O35','Plus de 3,5 buts',o35,xgs);A('Buts','U35','Moins de 3,5 buts',1-o35,xgs);A('Buts','BY','Les deux équipes marquent : OUI',bt,xgs);A('Buts','BN','Les deux équipes marquent : NON',1-bt,xgs);
+    const bg=g=>o.all.filter(x=>x.g===g).sort((a,b)=>b.p-a.p)[0],r1=bg('Résultat'),dc=bg('Double chance'),gl=bg('Buts');
+    o.main=r1&&r1.p>=.5?r1:dc&&dc.p>=.62?dc:gl&&gl.p>=.58?gl:null;o.ok=true;
+    if(o.main){let c=o.main.p>=.7?2:o.main.p>=.58?1:0;if(Math.min(H.length,T.length)<6)c=Math.max(0,c-1);o.conf=['Prudente','Moyenne','Forte'][c];o.confK=['lo','mid','hi'][c]}}
+   else o.note='Données de buts insuffisantes pour un pronostic fiable (moins de 4 matchs par équipe, ou saison trop récente).'}
+  else o.note='Équipes non retrouvées dans les résultats de la saison de la source.'}
+ else o.note=R===null?"Ce championnat n'a pas de résultats détaillés dans la source.":'Aucun résultat disponible pour ce championnat.';
+ if(!m.noStats)for(const [k,nm] of [['co','corners'],['yc','cartons jaunes'],['fo','fautes'],['sh','tirs']]){const a=m.st[k][0],b=m.st[k][1],mean=a+b;if(!(mean>0))continue;
+  const line=Math.floor(mean-.35*Math.sqrt(mean))+.5;A('Statistiques','S',`Plus de ${f1(line)} ${nm}`,pOver(line,mean),`${m.home} ${f1(a)} + ${m.away} ${f1(b)} = ${f1(mean)} ${nm} par match en moyenne, soit ${f1(mean-line)} de plus que la ligne ${f1(line)}.`)}
+ o.best=['Résultat','Double chance','Buts','Statistiques'].map(g=>o.all.filter(x=>x.g===g).sort((a,b)=>b.p-a.p)[0]).filter(Boolean);
+ return o}
+// ---- éléments d'une affiche
+const zzYmd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const zzLong=d=>{const t=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)};
+function zzItem(m,P){if(!P.ok)return null;const g=(k)=>P.all.find(x=>x.k===k),bo=P.all.filter(x=>x.k==='O25'||x.k==='U25').sort((a,b)=>b.p-a.p)[0],bb=P.all.filter(x=>x.k==='BY'||x.k==='BN').sort((a,b)=>b.p-a.p)[0];
+ const it={key:zzYmd(m.kickoff)+'|'+m.comp+'|'+m.home+'|'+m.away,ko:+m.kickoff,time:hm(m.kickoff),home:m.home,away:m.away,hl:m.homeLogo||'',al:m.awayLogo||'',
+  main:P.main?{t:P.main.t,k:P.main.k,p:P.main.p}:null,conf:P.conf,confK:P.confK,score:P.scores[0]||null,ex:[bo,bb].filter(Boolean).map(x=>({t:x.t,p:x.p}))};
+ if(m.done&&m.score){it.res=m.score;it.ok=P.main?zzEv(P.main.k,m.score[0],m.score[1]):null}else if(m.live){it.live=m.live.score}
+ return it}
+function zzItems(){const t0=new Date(),t1=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()+1,12),L=[];
+ for(const [dk,d] of [['today',t0],['tomorrow',t1]])for(const m of ALL.filter(x=>same(x.kickoff,d)).sort((a,b)=>a.kickoff-b.kickoff)){const P=zzPredict(m);L.push({dk,d,m,P,it:P.loading?null:zzItem(m,P)})}
+ return L}
+const zzTM=(m,t)=>{t=nz(t);return !t||nz(m.home).includes(t)||nz(m.away).includes(t)};
+function zzGroups(L){const out=[],skipped=[];
+ for(const dk of ['today','tomorrow']){if(ZS.day!=='both'&&ZS.day!==dk)continue;
+  const X=L.filter(x=>x.dk===dk&&(!ZS.comp||x.m.comp===ZS.comp)&&zzTM(x.m,ZS.team));
+  for(const comp of [...new Set(X.map(x=>x.m.comp))]){const Y=X.filter(x=>x.m.comp===comp),ok=Y.filter(x=>x.it);
+   if(!ok.length){skipped.push(comp+(dk==='today'?" (aujourd'hui)":' (demain)'));continue}
+   const pages=Math.ceil(ok.length/5);
+   for(let p=0;p<pages;p++)out.push({id:dk+'|'+comp+'|'+p,dk,date:ok[0].d,comp,page:p+1,pages,items:ok.slice(p*5,p*5+5).map(x=>x.it)})}}
+ return{out,skipped}}
+// ---- dessin des affiches (canvas, 1080 × 1350 = 4:5, fond blanc)
+const ZW=1080,ZH=1350,ZN='#0b1633',ZR='#d92d3a',ZG='#5a6788',ZFN='"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif',ZBS='"Barlow","Helvetica Neue",Arial,sans-serif';
+function zzRR(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function zzFit(c,t,max){t=String(t);if(c.measureText(t).width<=max)return t;while(t.length>1&&c.measureText(t+'…').width>max)t=t.slice(0,-1);return t+'…'}
+function zzImg(u){if(!u||MODE==='demo')return Promise.resolve(null);if(!ZZ.img[u])ZZ.img[u]=new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src='/img?u='+encodeURIComponent(u)});return ZZ.img[u]}
+async function zzLogo(c,name,url,x,y,s){const im=await zzImg(url);c.save();c.beginPath();c.arc(x+s/2,y+s/2,s/2,0,7);c.clip();
+ if(im){c.fillStyle='#fff';c.fillRect(x,y,s,s);const r=Math.min(s/im.width,s/im.height)*.94,w=im.width*r,h=im.height*r;c.drawImage(im,x+(s-w)/2,y+(s-h)/2,w,h)}
+ else{const w=String(name).replace(/[^A-Za-zÀ-ÿ ]/g,' ').trim().split(/\s+/);c.fillStyle='hsl('+(zzHash(name)%360)+',45%,34%)';c.fillRect(x,y,s,s);c.fillStyle='#fff';c.font='700 '+Math.round(s*.4)+'px '+ZBS;c.textAlign='center';c.textBaseline='middle';c.fillText((w.length>1?w[0][0]+w[1][0]:String(name).slice(0,3)).toUpperCase(),x+s/2,y+s/2+1)}
+ c.restore();c.beginPath();c.arc(x+s/2,y+s/2,s/2,0,7);c.strokeStyle='#dfe3ee';c.lineWidth=2;c.stroke()}
+async function zzDraw(d){
+ try{await Promise.race([Promise.all([document.fonts.load('700 40px "Barlow Condensed"'),document.fonts.load('600 20px "Barlow"'),document.fonts.load('800 20px "Barlow"')]),new Promise(r=>setTimeout(r,1500))])}catch(e){}
+ const cv=document.createElement('canvas');cv.width=ZW;cv.height=ZH;const c=cv.getContext('2d');
+ c.fillStyle='#fff';c.fillRect(0,0,ZW,ZH);c.fillStyle=ZN;c.fillRect(0,0,ZW,14);c.fillStyle=ZR;c.fillRect(0,14,ZW,5);
+ zzRR(c,48,46,112,112,26);c.fillStyle=ZN;c.fill();c.fillStyle='#fff';c.font='700 68px '+ZFN;c.textAlign='center';c.textBaseline='middle';c.fillText('MD',104,103);
+ c.textAlign='left';c.fillStyle=ZN;c.font='700 78px '+ZFN;c.fillText('MD ZEZAYE',186,88);c.fillStyle=ZR;c.font='800 27px '+ZBS;c.fillText('PRONOSTICS FOOTBALL',188,138);
+ zzRR(c,48,184,984,124,28);c.fillStyle='#f3f5fb';c.fill();c.fillStyle=ZR;c.fillRect(48,214,10,64);
+ c.fillStyle=ZN;c.font='700 62px '+ZFN;c.textBaseline='middle';c.fillText(zzFit(c,d.comp,d.pages>1?740:900),84,236);
+ c.fillStyle=ZG;c.font='600 27px '+ZBS;c.fillText((d.dk==='today'?"Aujourd'hui · ":'Demain · ')+zzLong(d.date),84,282);
+ if(d.pages>1){c.textAlign='right';c.fillStyle=ZR;c.font='700 44px '+ZFN;c.fillText(d.page+'/'+d.pages,1000,236);c.textAlign='left'}
+ let y=330;const H=178,G=12;
+ for(const it of d.items){
+  zzRR(c,48,y,984,H,24);c.fillStyle='#f7f8fc';c.fill();c.strokeStyle='#e4e8f2';c.lineWidth=2;c.stroke();
+  c.textBaseline='middle';c.textAlign='left';c.fillStyle=ZN;c.font='700 46px '+ZFN;c.fillText(it.time,72,y+62);
+  c.font='700 18px '+ZBS;if(it.live){c.fillStyle=ZR;c.fillText('EN DIRECT '+it.live[0]+'-'+it.live[1],72,y+104)}
+  else if(it.res){c.fillStyle=ZG;c.fillText('RÉSULTAT '+it.res[0]+'-'+it.res[1],72,y+104);if(it.ok!=null){c.fillStyle=it.ok?'#1fa463':ZR;c.fillText(it.ok?'PRONOSTIC VALIDÉ':'PRONOSTIC RATÉ',72,y+130)}}
+  await zzLogo(c,it.home,it.hl,196,y+22,58);await zzLogo(c,it.away,it.al,196,y+98,58);
+  c.fillStyle=ZN;c.font='700 30px '+ZBS;c.textBaseline='middle';c.textAlign='left';c.fillText(zzFit(c,it.home,320),270,y+52);c.fillText(zzFit(c,it.away,320),270,y+128);
+  c.fillStyle='#d6dbe9';c.fillRect(612,y+22,2,H-44);
+  const X=638;c.fillStyle=ZG;c.font='800 16px '+ZBS;c.fillText('PRONOSTIC PRINCIPAL',X,y+28);
+  const col={hi:'#1fa463',mid:'#f08c00',lo:'#d9534f'}[it.confK||'lo'];
+  if(it.main){c.fillStyle=ZN;c.font='800 27px '+ZBS;c.fillText(zzFit(c,it.main.t,290),X,y+60);zzRR(c,X+300,y+38,92,42,21);c.fillStyle=col;c.fill();c.fillStyle='#fff';c.font='800 24px '+ZBS;c.textAlign='center';c.fillText(Math.round(it.main.p*100)+'%',X+346,y+60);c.textAlign='left'}
+  else{c.fillStyle=ZG;c.font='700 25px '+ZBS;c.fillText('Match trop incertain',X,y+60)}
+  c.fillStyle=ZN;c.font='700 24px '+ZBS;if(it.score)c.fillText('Score probable : '+it.score.s+'  ('+Math.round(it.score.p*100)+'%)',X,y+98);
+  c.fillStyle=ZG;c.font='600 20px '+ZBS;c.fillText(zzFit(c,it.ex.map(x=>x.t.replace('Les deux équipes marquent : ','BTTS ').replace(' buts','')+' '+Math.round(x.p*100)+'%').join('  ·  '),360),X,y+128);
+  if(it.conf){c.fillStyle=col;c.font='800 19px '+ZBS;c.fillText('Confiance : '+it.conf,X,y+156)}
+  y+=H+G}
+ c.fillStyle='#e3e7f1';c.fillRect(48,1262,984,2);c.fillStyle=ZG;c.font='500 21px '+ZBS;c.textBaseline='middle';c.textAlign='left';c.fillText('Estimations statistiques : ce ne sont pas des certitudes. Jouez avec modération.',48,1297);
+ c.textAlign='right';c.font='700 21px '+ZBS;c.fillText('MD ZEZAYE · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),1032,1297);
+ return cv}
+const zzBlob=(cv,fmt)=>new Promise(r=>cv.toBlob(r,fmt==='jpg'?'image/jpeg':'image/png',fmt==='jpg'?.93:undefined));
+const zzFile=(d,fmt)=>'MD-ZEZAYE_'+d.comp.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-')+'_'+zzYmd(d.date)+(d.pages>1?'_'+d.page+'sur'+d.pages:'')+'.'+(fmt==='jpg'?'jpg':'png');
+const zzToast=t=>{let e=document.getElementById('zztoast');if(!e){document.body.insertAdjacentHTML('beforeend','<div id="zztoast" class="zztoast"></div>');e=document.getElementById('zztoast')}e.textContent=t;e.classList.add('on');clearTimeout(zzToast.t);zzToast.t=setTimeout(()=>e.classList.remove('on'),2600)};
+async function zzSave(i,fmt){if(i!=null)ZZ.cur=ZZ.P[i];const d=ZZ.cur;if(!d)return;
+ if(MODE==='demo'){zzToast("Démo : appuie longuement sur l'image pour l'enregistrer");return zzPrev(i)}
+ zzToast('Création de l\'image…');const b=await zzBlob(await zzDraw(d),fmt),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=zzFile(d,fmt);document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);zzToast('Image enregistrée : '+a.download)}
+async function zzShare(i){if(i!=null)ZZ.cur=ZZ.P[i];const d=ZZ.cur;if(!d)return;const b=await zzBlob(await zzDraw(d),'png'),f=new File([b],zzFile(d,'png'),{type:'image/png'});
+ try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'MD ZEZAYE — '+d.comp});return}}catch(e){if(e&&e.name==='AbortError')return}
+ zzToast("Partage indisponible ici : l'image est enregistrée à la place");return zzSave(null,'png')}
+async function zzPrev(i){if(i!=null)ZZ.cur=ZZ.P[i];const d=ZZ.cur;if(!d)return;const u=(await zzDraw(d)).toDataURL('image/png');zzClose();
+ document.body.insertAdjacentHTML('beforeend',`<div id="zzmod" class="zzmod" onclick="zzClose()"><div class="zzmi" onclick="event.stopPropagation()"><button class="zzx" onclick="zzClose()" aria-label="Fermer">✕</button><img src="${u}" alt="Affiche ${zzE(d.comp)}"><div class="zzbtns"><button class="chip on" onclick="zzSave(null,'png')">📥 PNG</button><button class="chip on" onclick="zzSave(null,'jpg')">📥 JPG</button><button class="chip" onclick="zzShare(null)">📤 Partager</button></div></div></div>`)}
+function zzClose(){const e=document.getElementById('zzmod');if(e)e.remove()}
+async function zzRefresh(i){zzToast('Actualisation des pronostics…');try{if(MODE!=='demo'&&typeof loadLive==='function')await loadLive()}catch(e){}ZZ.cache={};go();zzToast('Pronostics actualisés')}
+// ---- historique (enregistré sur cet appareil)
+const zzLH=()=>{try{return JSON.parse(localStorage.getItem('pl_zz_hist'))||{}}catch(e){return{}}};
+function zzSnap(L){const H=zzLH(),now=Date.now();let ch=0;
+ for(const x of L){if(!x.it||!x.it.main&&!x.it.score)continue;const k=x.it.key,old=H[k];if(old&&x.it.ko<now)continue;H[k]=Object.assign({},x.it,{comp:x.m.comp,dk:x.dk,t:now});ch++}
+ if(!ch)return;const keys=Object.keys(H).sort().reverse();for(const k of keys.slice(500))delete H[k];for(const k of keys){if(now-H[k].ko>14*864e5)delete H[k]}
+ try{localStorage.setItem('pl_zz_hist',JSON.stringify(H))}catch(e){}}
+function zzHist(){const H=zzLH(),ks=Object.keys(H).sort().reverse();if(!ks.length)return `<div class="card sub">Aucun pronostic enregistré pour l'instant : ils s'ajoutent automatiquement chaque fois que tu ouvres cette page.</div>`;
+ const byD={};for(const k of ks){const d=k.split('|')[0];(byD[d]=byD[d]||[]).push(H[k])}
+ return Object.keys(byD).sort().reverse().map(d=>{const E=byD[d],comps=[...new Set(E.map(e=>e.comp))];
+  return `<h3 class="zzh3">${zzLong(new Date(d+'T12:00'))}</h3>`+comps.map(c=>{const Z=E.filter(e=>e.comp===c).sort((a,b)=>a.ko-b.ko);
+   const rows=Z.map(e=>{const fin=ALL.find(m=>m.done&&m.score&&m.comp===c&&zzYmd(m.kickoff)===d&&(sameT(m.home,e.home)||sameT(m.away,e.away))),ok=fin&&e.main?zzEv(e.main.k,fin.score[0],fin.score[1]):null;
+    return `<div class="zzhr"><span>${e.time} · ${zzE(e.home)} – ${zzE(e.away)}</span><b>${e.main?zzE(e.main.t)+' '+Math.round(e.main.p*100)+'%':'—'}</b>${fin?`<small class="${ok?'ok':'ko'}">${fin.score[0]}-${fin.score[1]} ${ok==null?'':ok?'✓ validé':'✗ raté'}</small>`:''}</div>`}).join('');
+   const di=Z[0].dk,pgs=Math.ceil(Z.length/5);return `<div class="card"><div class="row" style="margin:0"><b style="color:var(--red)">${zzE(c)}</b><button class="chip" onclick="zzHistPoster('${d}','${zzE(c).replace(/'/g,"\\'")}')">👁️ Affiche${pgs>1?'s':''}</button></div>${rows}</div>`}).join('')}).join('')}
+function zzHistPoster(d,c){const H=zzLH(),Z=Object.keys(H).map(k=>H[k]).filter(e=>zzYmd(new Date(e.ko))===d&&e.comp===c).sort((a,b)=>a.ko-b.ko);if(!Z.length)return;
+ ZZ.cur={id:'h|'+d+'|'+c,dk:Z[0].dk,date:new Date(d+'T12:00'),comp:c,page:1,pages:1,items:Z.slice(0,5)};zzPrev(null)}
+// ---- page
+function zzPosterHTML(d,i){const k=d.id+'|'+zzHash(JSON.stringify(d.items)),u=ZZ.cache[k];
+ return `<div class="card zzpo"><div class="zzpt"><b>${zzE(d.comp)}</b> · ${d.dk==='today'?"Aujourd'hui":'Demain'}${d.pages>1?' · affiche '+d.page+'/'+d.pages:''}</div>${u?`<img class="zzimg" src="${u}" alt="Affiche ${zzE(d.comp)}">`:`<div class="zzph" id="zp${i}" data-k="${zzE(k)}">Génération de l'affiche…</div>`}`+
+  `<div class="zzbtns"><button class="chip on" onclick="zzSave(${i},'png')">📥 Télécharger en PNG</button><button class="chip on" onclick="zzSave(${i},'jpg')">📥 Télécharger en JPG</button><button class="chip" onclick="zzShare(${i})">📤 Partager l'image</button><button class="chip" onclick="zzPrev(${i})">👁️ Prévisualiser</button><button class="chip" onclick="zzRefresh(${i})">🔄 Actualiser les pronostics</button></div></div>`}
+async function zzBuild(){const tok=++ZZ.tok;
+ for(let i=0;i<ZZ.P.length;i++){if(tok!==ZZ.tok)return;const d=ZZ.P[i],k=d.id+'|'+zzHash(JSON.stringify(d.items)),el=document.getElementById('zp'+i);if(!el||ZZ.cache[k])continue;
+  try{const cv=await zzDraw(d),t=document.createElement('canvas');t.width=540;t.height=675;t.getContext('2d').drawImage(cv,0,0,540,675);ZZ.cache[k]=t.toDataURL('image/jpeg',.88)}catch(e){el.textContent="Impossible de créer cette affiche";continue}
+  if(tok!==ZZ.tok)return;const e2=document.getElementById('zp'+i);if(e2){const im=document.createElement('img');im.className='zzimg';im.alt='Affiche '+d.comp;im.src=ZZ.cache[k];e2.replaceWith(im)}}}
+function zzDetCard(x){const m=x.m,P=x.P;let body='';
+ const sc=m.live?m.live.score:m.done?m.score:null,mid=sc?`<b class="zzs">${sc[0]} - ${sc[1]}</b><small class="${m.live?'zzlv':''}">${m.live?(m.live.ht?'MT':'LIVE'):'FM'}</small>`:`<b class="zzs">${hm(m.kickoff)}</b>`;
+ if(P.loading)body=`<div class="sub zzmt">Chargement des données du championnat…</div>`;
+ else if(!P.ok)body=`<div class="sub zzmt">Pas de pronostic fiable : ${zzE(P.note||'données insuffisantes')}</div>`;
+ else{const c=P.main?zzCf(P.main.p):null;
+  body=`<div class="zzp"><div><span class="zzg">Pronostic principal</span><b>${P.main?zzE(P.main.t):'Match trop incertain'}</b></div><div class="zzpr">${P.main?`<span class="zzpp ${c[1]}">${pc(P.main.p)}</span><small>Confiance : ${P.conf}</small>`:''}</div></div>`+
+   `<div class="zzp"><div><span class="zzg">Score exact probable</span><b>${P.scores.map(s=>s.s+' ('+pc(s.p)+')').join(' · ')}</b></div></div>`+
+   `<details class="zzd"><summary>Tous les marchés et l'analyse</summary>`+['Résultat','Double chance','Buts','Statistiques'].map(g=>{const A=P.all.filter(y=>y.g===g);return A.length?`<h4>${g==='Résultat'?'1X2':g}</h4>`+A.map(y=>`<div class="zzw"><b>${zzE(y.t)}</b> <span class="zzpp ${zzCf(y.p)[1]}">${pc(y.p)}</span></div>`).join(''):''}).join('')+
+   `<h4>Pourquoi</h4><div class="sub">${zzE(P.all[0]?P.all[0].why:'')}</div>`+(P.ctx?`<h4>Forme et confrontations directes</h4><div class="zzcols">${[[m.home,P.ctx.H],[m.away,P.ctx.A]].map(([n,T])=>`<div class="zzcol"><b>${zzE(n)}</b><div class="zzfm">${T.slice(-5).map(y=>`<i class="zz${y.res}">${y.res}</i>`).join('')}</div>${T.slice(-5).reverse().map(y=>`<div class="sub">${y.res} ${y.f}-${y.c} ${y.h?'vs':'@'} ${zzE(y.opp)}</div>`).join('')}</div>`).join('')}</div>`+(P.ctx.h2h.length?P.ctx.h2h.map(r=>`<div class="sub">${zzE(r.HomeTeam)} ${zzE(r.FTHG)}-${zzE(r.FTAG)} ${zzE(r.AwayTeam)}</div>`).join(''):`<div class="sub">Aucune confrontation directe cette saison dans la source (les saisons passées ne sont pas utilisées).</div>`):'')+
+   `<div class="sub" style="margin-top:8px">Estimations statistiques à partir des résultats de la saison en cours : sans absences, arbitre ni enjeu. Ce ne sont pas des certitudes.</div></details>`}
+ return `<div class="card zzc"><div class="zzr"><div class="zzn r">${zzE(m.home)}</div>${lg(m.home,m.homeLogo)}<div class="zzm">${mid}</div>${lg(m.away,m.awayLogo)}<div class="zzn">${zzE(m.away)}</div></div>${body}</div>`}
+function vZ(){const L=zzItems(),comps=[...new Set(L.map(x=>x.m.comp))];
+ let h=`<div class="zzban"><b>⚽ PRONOSTICS MD ZEZAYE</b><span>Pronostics générés automatiquement à partir des données de l'appli. Ce sont des estimations, jamais des certitudes.${MODE==='demo'?' <em>Démo : données fictives.</em>':''}</span></div>`;
+ h+=`<div class="chips">${[['both','Les deux jours'],['today',"Aujourd'hui"],['tomorrow','Demain']].map(x=>`<button class="chip ${ZS.day===x[0]?'on':''}" onclick="ZS.day='${x[0]}';go()">${x[1]}</button>`).join('')}</div>`+
+  `<div class="zzfl"><select onchange="ZS.comp=this.value;go()" aria-label="Championnat"><option value="">Tous les championnats</option>${comps.map(c=>`<option value="${zzE(c)}" ${ZS.comp===c?'selected':''}>${zzE(c)}</option>`).join('')}</select><input type="search" placeholder="Équipe…" value="${zzE(ZS.team)}" onchange="ZS.team=this.value;go()" aria-label="Équipe"></div>`+
+  `<div class="chips">${[['a','Affiches'],['m','Matchs détaillés'],['h','Historique']].map(x=>`<button class="chip ${ZS.tab===x[0]?'on':''}" onclick="ZS.tab='${x[0]}';go()">${x[1]}</button>`).join('')}</div>`;
+ if(ZS.tab==='h')h+=zzHist();
+ else if(ZS.tab==='m'){const X=L.filter(x=>(ZS.day==='both'||ZS.day===x.dk)&&(!ZS.comp||x.m.comp===ZS.comp)&&zzTM(x.m,ZS.team));
+  h+=X.length?['today','tomorrow'].map(dk=>{const Y=X.filter(x=>x.dk===dk);return Y.length?`<h3 class="zzh3">${dk==='today'?"MATCHS D'AUJOURD'HUI":'MATCHS DE DEMAIN'}</h3>`+[...new Set(Y.map(x=>x.m.comp))].map(c=>`<div class="zzgh">${zzE(typeof cname==='function'?cname(c):c)}</div>`+Y.filter(x=>x.m.comp===c).map(zzDetCard).join('')).join(''):''}).join(''):`<div class="card sub">Aucun match disponible dans la source pour ce filtre.</div>`}
+ else{const G=zzGroups(L);ZZ.P=G.out;h+=G.out.length?G.out.map(zzPosterHTML).join(''):`<div class="card sub">Aucune affiche à créer : aucun match avec assez de données pour ce filtre.</div>`;
+  if(G.skipped.length)h+=`<div class="sub">Pas assez de données pour un pronostic fiable : ${zzE(G.skipped.join(', '))}.</div>`;
+  setTimeout(zzBuild,0)}
+ try{zzSnap(L)}catch(e){}
+ return h}
+const zzBtn=()=>`<button class="zzr6${S.v==='z'?' on':''}" onclick="go('z')" aria-label="PRONOSTICS MD ZEZAYE"><div class="ic"><span class="zzbi">⚽</span></div><span class="zzlb">PRONOSTICS<br>MD ZEZAYE</span></button>`;
+// ==================== FIN DU BOUTON MD ZEZAYE ====================
+
 const _lv=setInterval(()=>{if(typeof document.hidden==='undefined'||!document.hidden){loadLive();const dm=ALL.find(x=>x.id==S.det);if(dm&&dm.live)loadTL(dm)}},60000);if(_lv&&_lv.unref)_lv.unref();
 const _iv=setInterval(()=>{const a=document.activeElement;if(S.v=='m'&&S.r=='live'&&S.det==null&&!(a&&/INPUT|TEXTAREA/.test(a.tagName||'')))go()},60000);if(_iv&&_iv.unref)_iv.unref();
 go();
