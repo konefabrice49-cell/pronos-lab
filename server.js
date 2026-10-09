@@ -50,44 +50,38 @@ function logosRoute(res) {
 const ESPN = { "eng.1": "Premier League", "esp.1": "La Liga", "fra.1": "Ligue 1", "ger.1": "Bundesliga", "ita.1": "Serie A", "uefa.champions": "Ligue des champions", "uefa.europa": "Europa League",
   "ned.1": "Eredivisie", "por.1": "Primeira Liga", "bel.1": "Pro League belge", "sco.1": "Premiership écossaise", "tur.1": "Süper Lig", "gre.1": "Super League grecque" };
 let liveCache = { t: 0, v: [] };
-async function liveRoute(res, debug) {
+const dcache = {}, ymd8 = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
+// un jour précis (YYYYMMDD) ou le tableau par défaut ("") ; les jours à venir sont gardés 10 min, aujourd'hui et hier 45 s
+async function espnDay(sl, ds) {
+  const key = sl + "|" + ds, ttl = ds && ds >= ymd8(Date.now() + 864e5) ? 10 * 6e4 : 45e3, c = dcache[key];
+  if (c && Date.now() - c.t < ttl) return c.events;
+  let events = [];
+  try {
+    const r = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/scoreboard" + (ds ? "?dates=" + ds : ""), { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (r.ok) events = (await r.json()).events || [];
+  } catch {}
+  dcache[key] = { t: Date.now(), events }; return events;
+}
+function normEvent(sl, e) {
+  const c = (e.competitions || [])[0]; if (!c) return null;
+  const H = (c.competitors || []).find(x => x.homeAway === "home"), A = (c.competitors || []).find(x => x.homeAway === "away"); if (!H || !A) return null;
+  const st = c.status || e.status || {}, ty = st.type || {};
+  const ev = (c.details || []).filter(d => d && (d.scoringPlay || d.yellowCard || d.redCard)).sort((x, y) => ((x.clock || {}).value || 0) - ((y.clock || {}).value || 0)).map(d => ({
+    s: String((d.team || {}).id) === String(H.team.id) ? "h" : "a", m: (d.clock || {}).displayValue || "", n: ((d.athletesInvolved || [])[0] || {}).shortName || ((d.athletesInvolved || [])[0] || {}).displayName || "",
+    g: !!d.scoringPlay, y: !!d.yellowCard, r: !!d.redCard, p: !!d.penaltyKick, o: !!d.ownGoal }));
+  return { comp: ESPN[sl], home: H.team.displayName, away: A.team.displayName, hl: H.team.logo, al: A.team.logo, date: e.date, state: ty.state, name: ty.name, clock: st.displayClock, hs: +H.score || 0, as: +A.score || 0, ev, id: e.id, lg: sl, hid: H.team.id, aid: A.team.id };
+}
+async function liveRoute(res) {
   const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
-  if (!debug && Date.now() - liveCache.t < 45e3) return send(200, liveCache.v);
-  const out = [], slugs = Object.keys(ESPN), dbg = {};
-  for (let i = 0; i < slugs.length; i += 6) {
-    await Promise.all(slugs.slice(i, i + 6).map(async sl => {
-      try {
-        // période hier → +4 jours (calendrier complet), puis tableau par défaut ; en cas d'erreur du site d'ESPN, deuxième adresse (site.web)
-        const fd = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, ""), log = [];
-        let j = null;
-        for (const h of ["site.api.espn.com", "site.web.api.espn.com"]) {
-          const base = "https://" + h + "/apis/site/v2/sports/soccer/" + sl + "/scoreboard", w = h.includes(".web.") ? "web-" : "";
-          let failed = false;
-          for (const [nm, u] of [[w + "période", base + "?dates=" + fd(Date.now() - 864e5) + "-" + fd(Date.now() + 4 * 864e5) + "&limit=200"], [w + "défaut", base]]) {
-            try {
-              const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } });
-              if (!r.ok) { failed = true; log.push(nm + ":" + r.status); continue; }
-              const x = await r.json(), n = (x.events || []).length; log.push(nm + ":" + n);
-              if (n) { j = x; break; }
-            } catch { failed = true; log.push(nm + ":erreur"); }
-          }
-          if (j || !failed) break;
-        }
-        dbg[ESPN[sl]] = { evenements: j ? (j.events || []).length : 0, essais: log };
-        if (!j) return;
-        for (const e of j.events || []) {
-          const c = (e.competitions || [])[0]; if (!c) continue;
-          const H = (c.competitors || []).find(x => x.homeAway === "home"), A = (c.competitors || []).find(x => x.homeAway === "away"); if (!H || !A) continue;
-          const st = c.status || e.status || {}, ty = st.type || {};
-          const ev = (c.details || []).filter(d => d && (d.scoringPlay || d.yellowCard || d.redCard)).sort((x, y) => ((x.clock || {}).value || 0) - ((y.clock || {}).value || 0)).map(d => ({
-            s: String((d.team || {}).id) === String(H.team.id) ? "h" : "a", m: (d.clock || {}).displayValue || "", n: ((d.athletesInvolved || [])[0] || {}).shortName || ((d.athletesInvolved || [])[0] || {}).displayName || "",
-            g: !!d.scoringPlay, y: !!d.yellowCard, r: !!d.redCard, p: !!d.penaltyKick, o: !!d.ownGoal }));
-          out.push({ comp: ESPN[sl], home: H.team.displayName, away: A.team.displayName, hl: H.team.logo, al: A.team.logo, date: e.date, state: ty.state, name: ty.name, clock: st.displayClock, hs: +H.score || 0, as: +A.score || 0, ev, id: e.id, lg: sl, hid: H.team.id, aid: A.team.id });
-        }
-      } catch {}
-    }));
+  if (Date.now() - liveCache.t < 30e3) return send(200, liveCache.v);
+  // pour chaque championnat : tableau par défaut + hier, aujourd'hui et les 3 jours suivants (un appel par jour)
+  const days = ["", ...[-1, 0, 1, 2, 3].map(k => ymd8(Date.now() + k * 864e5))], jobs = [];
+  for (const sl of Object.keys(ESPN)) for (const ds of days) jobs.push([sl, ds]);
+  const seen = new Set(), out = [];
+  for (let i = 0; i < jobs.length; i += 8) {
+    const got = await Promise.all(jobs.slice(i, i + 8).map(([sl, ds]) => espnDay(sl, ds).then(ev => [sl, ev])));
+    for (const [sl, events] of got) for (const e of events) { const k = sl + "|" + e.id; if (seen.has(k)) continue; seen.add(k); const o = normEvent(sl, e); if (o) out.push(o); }
   }
-  if (debug) return send(200, { total: out.length, championnats: dbg });
   liveCache = { t: Date.now(), v: out };
   send(200, out);
 }
