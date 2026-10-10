@@ -389,7 +389,8 @@ const stat=m=>{
  if(m.done)return `<span class="ftb">Terminé</span><b class="sc">${m.score[0]} – ${m.score[1]}</b>`;
  if(m.kickoff<new Date()){const a=Math.round((Date.now()-m.kickoff)/6e4);return a<=150?`<span class="sub">Commencé il y a ${a} min</span><span class="sub">score indisponible</span>`:`<span class="sub">Résultat en attente</span>`}
  const ic=S.rows.filter(r=>r.id==m.id).map(r=>CR.find(x=>x.k==r.k).i).join('');return ic?`<span class="tag ok">${ic}</span>`:''};
-let LIVEID=9000000;
+let LIVEID=9000000;const LGL={},SHF={Spurs:'Tottenham'};
+
 const tk=n=>{const k=nz(String(n).replace(/&/g,' '));return LA[k]||k};
 const sameT=(a,b)=>{const x=tk(a).split(' ').filter(Boolean),y=tk(b).split(' ').filter(Boolean);return x.length>0&&y.length>0&&(x.every(t=>y.includes(t))||y.every(t=>x.includes(t)))};
 function mergeLive(list){
@@ -404,7 +405,7 @@ function mergeLive(list){
   if(!m.homeLogo&&e.hl)m.homeLogo=e.hl;if(!m.awayLogo&&e.al)m.awayLogo=e.al;
   m.kickoff=k;
   if(m.noStats&&!m.enr&&MODE==='csv'){m.enr=1;Csv.statsFor(m.comp,m.home,m.away).then(r=>{if(r){m.st=r.st;m.info=r.info;delete m.noStats;if(S.det==null)go()}}).catch(()=>{})}
-  m.events=e.ev||[];m.espn={lg:e.lg,id:e.id,h:e.hid};
+  m.events=e.ev||[];m.espn={lg:e.lg,id:e.id,h:e.hid};if(e.ll)LGL[e.comp]=e.ll;if(e.hsn)m.homeShort=SHF[e.hsn]||e.hsn;if(e.asn)m.awayShort=SHF[e.asn]||e.asn;
   if(e.state==='in'){m.live={score:[e.hs,e.as],min:e.clock||null,ht:e.name==='STATUS_HALFTIME'};m.liveSrc='espn';delete m.done}
   else if(e.state==='post'&&!m.real&&!m.done){m.done=true;m.score=[e.hs,e.as]}
   ch++}
@@ -556,9 +557,11 @@ function zzPredict(m){
 // ---- éléments d'une affiche
 const zzYmd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const zzLong=d=>{const t=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)};
-function zzItem(m,P){if(!P.ok)return null;const g=(k)=>P.all.find(x=>x.k===k),bo=P.all.filter(x=>x.k==='O25'||x.k==='U25').sort((a,b)=>b.p-a.p)[0],bb=P.all.filter(x=>x.k==='BY'||x.k==='BN').sort((a,b)=>b.p-a.p)[0];
- const it={key:zzYmd(m.kickoff)+'|'+m.comp+'|'+m.home+'|'+m.away,ko:+m.kickoff,time:hm(m.kickoff),home:m.home,away:m.away,hl:m.homeLogo||'',al:m.awayLogo||'',
-  main:P.main?{t:P.main.t,k:P.main.k,p:P.main.p}:null,conf:P.conf,confK:P.confK,score:P.scores[0]||null,ex:[bo,bb].filter(Boolean).map(x=>({t:x.t,p:x.p}))};
+function zzItem(m,P){if(!P.ok)return null;const sh=m.homeShort||m.home,sa=m.awayShort||m.away,fx=t=>String(t).split(m.home).join(sh).split(m.away).join(sa);const best=ks=>P.all.filter(x=>ks.includes(x.k)&&!(P.main&&x.k===P.main.k)).sort((a,b)=>b.p-a.p)[0];
+ const cand=[best(['O25','U25']),best(['BY','BN']),best(['O15','U15']),best(['O35','U35']),(P.main&&['1X','X2','12'].includes(P.main.k))?null:best(['1X','X2','12']),P.all.filter(x=>x.g==='Statistiques').sort((a,b)=>b.p-a.p)[0]].filter(x=>x&&x.p>=.5),seen={},ex=[];
+ for(const x of cand.sort((a,b)=>b.p-a.p)){if(seen[x.t])continue;seen[x.t]=1;ex.push({t:fx(x.t),p:x.p});if(ex.length>=3)break}
+ const it={key:zzYmd(m.kickoff)+'|'+m.comp+'|'+m.home+'|'+m.away,ko:+m.kickoff,time:hm(m.kickoff),home:m.home,away:m.away,hn:sh,an:sa,hl:m.homeLogo||'',al:m.awayLogo||'',
+  main:P.main?{t:fx(P.main.t),k:P.main.k,p:P.main.p}:null,conf:P.conf,confK:P.confK,score:P.scores[0]||null,ex};
  if(m.done&&m.score){it.res=m.score;it.ok=P.main?zzEv(P.main.k,m.score[0],m.score[1]):null}else if(m.live){it.live=m.live.score}
  return it}
 function zzItems(){const t0=new Date(),t1=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()+1,12),L=[];
@@ -570,10 +573,12 @@ function zzGroups(L){const out=[],skipped=[];
   const X=L.filter(x=>x.dk===dk&&(!ZS.comp||x.m.comp===ZS.comp)&&zzTM(x.m,ZS.team));
   for(const comp of [...new Set(X.map(x=>x.m.comp))]){const Y=X.filter(x=>x.m.comp===comp),ok=Y.filter(x=>x.it);
    if(!ok.length){skipped.push(comp+(dk==='today'?" (aujourd'hui)":' (demain)'));continue}
-   const pages=Math.ceil(ok.length/5);
-   for(let p=0;p<pages;p++)out.push({id:dk+'|'+comp+'|'+p,dk,date:ok[0].d,comp,page:p+1,pages,items:ok.slice(p*5,p*5+5).map(x=>x.it)})}}
+   const pages=Math.ceil(ok.length/zzPer());
+   for(let p=0;p<pages;p++)out.push({id:dk+'|'+comp+'|'+p,dk,date:ok[0].d,comp,page:p+1,pages,items:ok.slice(p*zzPer(),p*zzPer()+zzPer()).map(x=>x.it)})}}
  return{out,skipped}}
 // ---- dessin des affiches (canvas, 1080 × 1350 = 4:5, fond blanc)
+const ZFMs={'23':{h:1620,rows:8},'45':{h:1350,rows:6}};let ZFM='23';try{ZFM=localStorage.getItem('pl_zz_fmt')==='45'?'45':'23'}catch(e){}
+const zzPer=()=>ZFMs[ZFM].rows;
 const ZW=1080,ZH=1350,ZN='#0b1633',ZR='#d92d3a',ZG='#5a6788',ZFN='"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif',ZBS='"Barlow","Helvetica Neue",Arial,sans-serif';
 function zzRR(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 function zzFit(c,t,max){t=String(t);if(c.measureText(t).width<=max)return t;while(t.length>1&&c.measureText(t+'…').width>max)t=t.slice(0,-1);return t+'…'}
@@ -582,35 +587,93 @@ async function zzLogo(c,name,url,x,y,s){const im=await zzImg(url);c.save();c.beg
  if(im){c.fillStyle='#fff';c.fillRect(x,y,s,s);const r=Math.min(s/im.width,s/im.height)*.94,w=im.width*r,h=im.height*r;c.drawImage(im,x+(s-w)/2,y+(s-h)/2,w,h)}
  else{const w=String(name).replace(/[^A-Za-zÀ-ÿ ]/g,' ').trim().split(/\s+/);c.fillStyle='hsl('+(zzHash(name)%360)+',45%,34%)';c.fillRect(x,y,s,s);c.fillStyle='#fff';c.font='700 '+Math.round(s*.4)+'px '+ZBS;c.textAlign='center';c.textBaseline='middle';c.fillText((w.length>1?w[0][0]+w[1][0]:String(name).slice(0,3)).toUpperCase(),x+s/2,y+s/2+1)}
  c.restore();c.beginPath();c.arc(x+s/2,y+s/2,s/2,0,7);c.strokeStyle='#dfe3ee';c.lineWidth=2;c.stroke()}
+const ZACC={'Premier League':'#3d195b','La Liga':'#c8102e','Ligue 1':'#14274e','Bundesliga':'#c8102e','Serie A':'#0a4ea3','Eredivisie':'#e8590c','Primeira Liga':'#0b6b3a','Pro League belge':'#b3001b','Premiership écossaise':'#0a3d8f','Süper Lig':'#c8102e','Super League grecque':'#0d5eaf','Ligue des champions':'#0a1f5c','Europa League':'#e8590c'};
+const ZCT={'Premier League':['Angleterre','en'],'La Liga':['Espagne','es'],'Ligue 1':['France','fr'],'Bundesliga':['Allemagne','de'],'Serie A':['Italie','it'],'Eredivisie':['Pays-Bas','nl'],'Primeira Liga':['Portugal','pt'],'Pro League belge':['Belgique','be'],'Premiership écossaise':['Écosse','sc'],'Süper Lig':['Turquie','tr'],'Super League grecque':['Grèce','gr'],'Ligue des champions':['Europe','eu'],'Europa League':['Europe','eu']};
+const ZCODE={'1':'1',X:'N','2':'2','1X':'1X',X2:'X2','12':'12',O15:'+1,5',U15:'-1,5',O25:'+2,5',U25:'-2,5',O35:'+3,5',U35:'-3,5',BY:'OUI',BN:'NON'};
+function zzFlagDraw(c,code,x,y,w,h){c.save();zzRR(c,x,y,w,h,8);c.clip();c.fillStyle='#fff';c.fillRect(x,y,w,h);
+ const H3=(a,b,d)=>{c.fillStyle=a;c.fillRect(x,y,w,h/3);c.fillStyle=b;c.fillRect(x,y+h/3,w,h/3);c.fillStyle=d;c.fillRect(x,y+2*h/3,w,h/3)},V3=(a,b,d)=>{c.fillStyle=a;c.fillRect(x,y,w/3,h);c.fillStyle=b;c.fillRect(x+w/3,y,w/3,h);c.fillStyle=d;c.fillRect(x+2*w/3,y,w/3,h)};
+ if(code==='en'){c.fillStyle='#cf142b';c.fillRect(x+w*.43,y,w*.14,h);c.fillRect(x,y+h*.42,w,h*.16)}
+ else if(code==='es'){c.fillStyle='#c60b1e';c.fillRect(x,y,w,h);c.fillStyle='#ffc400';c.fillRect(x,y+h*.25,w,h*.5)}
+ else if(code==='fr')V3('#0055a4','#fff','#ef4135');else if(code==='de')H3('#111','#dd0000','#ffce00');else if(code==='it')V3('#009246','#fff','#ce2b37');
+ else if(code==='nl')H3('#ae1c28','#fff','#21468b');else if(code==='pt'){c.fillStyle='#006600';c.fillRect(x,y,w*.4,h);c.fillStyle='#ff0000';c.fillRect(x+w*.4,y,w*.6,h)}
+ else if(code==='be')V3('#111','#fdda24','#ef3340');else if(code==='sc'){c.fillStyle='#0065bd';c.fillRect(x,y,w,h);c.strokeStyle='#fff';c.lineWidth=h*.16;c.beginPath();c.moveTo(x,y);c.lineTo(x+w,y+h);c.moveTo(x+w,y);c.lineTo(x,y+h);c.stroke()}
+ else if(code==='tr'){c.fillStyle='#e30a17';c.fillRect(x,y,w,h);c.fillStyle='#fff';c.beginPath();c.arc(x+w*.4,y+h/2,h*.28,0,7);c.fill();c.fillStyle='#e30a17';c.beginPath();c.arc(x+w*.46,y+h/2,h*.23,0,7);c.fill()}
+ else if(code==='gr'){c.fillStyle='#0d5eaf';c.fillRect(x,y,w,h);c.fillStyle='#fff';for(let i=1;i<9;i+=2)c.fillRect(x,y+h*i/9,w,h/9);c.fillStyle='#0d5eaf';c.fillRect(x,y,w*.38,h*5/9);c.fillStyle='#fff';c.fillRect(x+w*.16,y,w*.06,h*5/9);c.fillRect(x,y+h*.22,w*.38,h*.06)}
+ else{c.fillStyle='#0b3d91';c.fillRect(x,y,w,h);c.fillStyle='#ffd400';for(let i=0;i<12;i++){const a=i*Math.PI/6;c.beginPath();c.arc(x+w/2+Math.cos(a)*h*.3,y+h/2+Math.sin(a)*h*.3,h*.05,0,7);c.fill()}}
+ c.restore();zzRR(c,x,y,w,h,8);c.strokeStyle='#cfd5e3';c.lineWidth=2;c.stroke()}
+async function zzLogoR(c,name,url,x,y,s){const im=await zzImg(url);
+ if(im){const r=Math.min(s/im.width,s/im.height),w=im.width*r,h=im.height*r;c.drawImage(im,x+(s-w)/2,y+(s-h)/2,w,h);return}
+ const w=String(name).replace(/[^A-Za-zÀ-ÿ ]/g,' ').trim().split(/\s+/);c.save();c.beginPath();c.arc(x+s/2,y+s/2,s/2,0,7);c.fillStyle='hsl('+(zzHash(name)%360)+',45%,34%)';c.fill();c.fillStyle='#fff';c.font='700 '+Math.round(s*.38)+'px '+ZBS;c.textAlign='center';c.textBaseline='middle';c.fillText((w.length>1?w[0][0]+w[1][0]:String(name).slice(0,3)).toUpperCase(),x+s/2,y+s/2+1);c.restore()}
+function zzLines(c,t,max){const w=String(t).split(' '),L=[''];for(const x of w){const T=(L[L.length-1]+' '+x).trim();if(c.measureText(T).width<=max||!L[L.length-1])L[L.length-1]=T;else L.push(x)}
+ if(L.length>2){L.length=2;L[1]=zzFit(c,L[1]+' …',max)}return L.map(l=>zzFit(c,l,max))}
 async function zzDraw(d){
  try{await Promise.race([Promise.all([document.fonts.load('700 40px "Barlow Condensed"'),document.fonts.load('600 20px "Barlow"'),document.fonts.load('800 20px "Barlow"')]),new Promise(r=>setTimeout(r,1500))])}catch(e){}
- const cv=document.createElement('canvas');cv.width=ZW;cv.height=ZH;const c=cv.getContext('2d');
- c.fillStyle='#fff';c.fillRect(0,0,ZW,ZH);c.fillStyle=ZN;c.fillRect(0,0,ZW,14);c.fillStyle=ZR;c.fillRect(0,14,ZW,5);
- zzRR(c,48,46,112,112,26);c.fillStyle=ZN;c.fill();c.fillStyle='#fff';c.font='700 68px '+ZFN;c.textAlign='center';c.textBaseline='middle';c.fillText('MD',104,103);
- c.textAlign='left';c.fillStyle=ZN;c.font='700 78px '+ZFN;c.fillText('MD ZEZAYE',186,88);c.fillStyle=ZR;c.font='800 27px '+ZBS;c.fillText('PRONOSTICS FOOTBALL',188,138);
- zzRR(c,48,184,984,124,28);c.fillStyle='#f3f5fb';c.fill();c.fillStyle=ZR;c.fillRect(48,214,10,64);
- c.fillStyle=ZN;c.font='700 62px '+ZFN;c.textBaseline='middle';c.fillText(zzFit(c,d.comp,d.pages>1?740:900),84,236);
- c.fillStyle=ZG;c.font='600 27px '+ZBS;c.fillText((d.dk==='today'?"Aujourd'hui · ":'Demain · ')+zzLong(d.date),84,282);
- if(d.pages>1){c.textAlign='right';c.fillStyle=ZR;c.font='700 44px '+ZFN;c.fillText(d.page+'/'+d.pages,1000,236);c.textAlign='left'}
- let y=330;const H=178,G=12;
+ const F=ZFMs[ZFM],k=ZW/1024,H=F.h/k,cv=document.createElement('canvas');cv.width=ZW;cv.height=F.h;const c=cv.getContext('2d');c.scale(k,k);
+ const ACC=ZACC[d.comp]||'#0b1633',[cty,fcode]=ZCT[d.comp]||['',''],arch=String(d.id).startsWith('h|');
+ const T=(t,x,y,f,col,al,bs)=>{c.font=f;c.fillStyle=col;c.textAlign=al||'left';c.textBaseline=bs||'middle';c.fillText(t,x,y)};
+ c.fillStyle='#fff';c.fillRect(0,0,1024,H);
+ const bg=c.createLinearGradient(0,0,0,300);bg.addColorStop(0,'#eef2fb');bg.addColorStop(1,'#fff');c.fillStyle=bg;c.fillRect(0,0,1024,300);
+ // --- marque MD ZEZAYE (couronne, lettres dorées, ballon)
+ const gold=c.createLinearGradient(0,60,0,210);gold.addColorStop(0,'#fff2a0');gold.addColorStop(.45,'#f2b320');gold.addColorStop(1,'#a66a00');
+ c.beginPath();c.moveTo(78,66);c.lineTo(70,30);c.lineTo(100,48);c.lineTo(118,14);c.lineTo(136,48);c.lineTo(166,30);c.lineTo(158,66);c.closePath();c.fillStyle=gold;c.fill();c.lineWidth=3;c.strokeStyle='#5a3a00';c.stroke();
+ for(const [px,py] of [[70,28],[118,12],[166,28]]){c.beginPath();c.arc(px,py,6,0,7);c.fillStyle='#ffe58a';c.fill();c.stroke()}
+ c.lineJoin='round';c.font='italic 900 104px '+ZFN;c.textAlign='left';c.textBaseline='alphabetic';c.lineWidth=8;c.strokeStyle='#161616';c.strokeText('MD',34,148);c.fillStyle=gold;c.fillText('MD',34,148);
+ c.font='italic 900 78px '+ZFN;c.lineWidth=7;c.strokeText('ZEZAYE',24,222);c.fillStyle=gold;c.fillText('ZEZAYE',24,222);
+ {const bx=250,by=108,r=38;c.beginPath();c.arc(bx,by,r,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=3;c.strokeStyle='#111';c.stroke();c.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*2*Math.PI/5;c.lineTo(bx+Math.cos(a)*r*.38,by+Math.sin(a)*r*.38)}c.closePath();c.fillStyle='#111';c.fill();
+  for(let i=0;i<5;i++){const a=-Math.PI/2+i*2*Math.PI/5;c.beginPath();c.moveTo(bx+Math.cos(a)*r*.38,by+Math.sin(a)*r*.38);c.lineTo(bx+Math.cos(a)*r*.82,by+Math.sin(a)*r*.82);c.stroke()}}
+ T('ANALYSE  ·  PRONOSTICS  ·  RÉSULTATS',24,246,'italic 800 14px '+ZBS,'#111','left');
+ // --- logo du championnat et nom
+ const LL=await zzImg(LGL[d.comp]),hasL=!!LL,cx=hasL?628:555,mw=hasL?270:400;
+ if(hasL){const r=Math.min(116/LL.width,116/LL.height);c.drawImage(LL,350+(116-LL.width*r)/2,26+(116-LL.height*r)/2,LL.width*r,LL.height*r)}
+ c.font='800 74px '+ZFN;let nm=d.comp,ln=[nm];if(c.measureText(nm).width>mw){const i=nm.lastIndexOf(' ');ln=i>0?[nm.slice(0,i),nm.slice(i+1)]:[nm]}
+ let fs=ln.length>1?66:74;do{c.font='800 '+fs+'px '+ZFN;fs-=2}while(Math.max(...ln.map(t=>c.measureText(t).width))>mw&&fs>28);
+ ln.forEach((t,i)=>T(t,cx,ln.length>1?58+i*62:84,c.font,ACC,'center'));
+ if(d.pages>1)T('affiche '+d.page+'/'+d.pages,cx,152,'800 20px '+ZBS,ACC,'center');
+ // --- bandeau « PRONOSTICS DU JOUR »
+ {const bx=330,by=184,bw=450,bh=72,txt=arch?'HISTORIQUE DES PRONOSTICS':d.dk==='today'?'PRONOSTICS DU JOUR':'PRONOSTICS DE DEMAIN';c.beginPath();c.moveTo(bx+16,by+6);for(let i=0;i<=12;i++)c.lineTo(bx+16+(bw-44)*i/12,by+(i%2?1:8));c.lineTo(bx+bw-6,by+4);c.lineTo(bx+bw,by+bh*.42);c.lineTo(bx+bw-16,by+bh*.72);c.lineTo(bx+bw-4,by+bh-5);for(let i=12;i>=0;i--)c.lineTo(bx+16+(bw-44)*i/12,by+bh-(i%2?2:9));c.lineTo(bx+4,by+bh-5);c.lineTo(bx,by+bh*.58);c.lineTo(bx+12,by+bh*.28);c.closePath();c.fillStyle=ACC;c.fill();
+  let f=50;do{c.font='italic 800 '+f+'px '+ZFN;f-=2}while(c.measureText(txt).width>bw-90&&f>22);T(txt,bx+bw/2,by+bh/2+2,c.font,'#fff','center')}
+ T('TOUS LES MATCHS   ·   TOUS LES CHAMPIONNATS   ·   UNE SEULE PASSION',555,286,'700 14px '+ZBS,'#16213e','center');
+ // --- date et drapeau
+ zzRR(c,780,16,226,96,18);c.fillStyle='#fff';c.fill();c.strokeStyle='#d9dfec';c.lineWidth=2;c.stroke();
+ c.strokeStyle='#16213e';c.lineWidth=3;zzRR(c,798,24,36,34,6);c.stroke();c.fillStyle='#16213e';c.fillRect(798,34,36,6);for(let i=0;i<3;i++)for(let j=0;j<2;j++)c.fillRect(804+i*10,44+j*8,6,5);
+ T(arch?'ARCHIVE':d.dk==='today'?"AUJOURD'HUI":'DEMAIN',846,40,'800 25px '+ZFN,'#16213e','left');
+ zzRR(c,792,64,202,40,20);c.fillStyle='#16213e';c.fill();T(String(d.date.getDate()).padStart(2,'0')+' / '+String(d.date.getMonth()+1).padStart(2,'0')+' / '+d.date.getFullYear(),893,85,'800 28px '+ZFN,'#fff','center');
+ if(fcode)zzFlagDraw(c,fcode,826,124,132,84);
+ c.save();c.translate(892,236);c.rotate(-.06);c.font='italic 700 28px '+ZFN;T(zzFit(c,d.comp,214),0,0,c.font,ACC,'center');if(cty)T(cty,0,28,'italic 700 28px '+ZFN,ACC,'center');c.restore();
+ // --- lignes de matchs
+ const RH=128,GP=10,Y0=308;let y=Y0;
  for(const it of d.items){
-  zzRR(c,48,y,984,H,24);c.fillStyle='#f7f8fc';c.fill();c.strokeStyle='#e4e8f2';c.lineWidth=2;c.stroke();
-  c.textBaseline='middle';c.textAlign='left';c.fillStyle=ZN;c.font='700 46px '+ZFN;c.fillText(it.time,72,y+62);
-  c.font='700 18px '+ZBS;if(it.live){c.fillStyle=ZR;c.fillText('EN DIRECT '+it.live[0]+'-'+it.live[1],72,y+104)}
-  else if(it.res){c.fillStyle=ZG;c.fillText('RÉSULTAT '+it.res[0]+'-'+it.res[1],72,y+104);if(it.ok!=null){c.fillStyle=it.ok?'#1fa463':ZR;c.fillText(it.ok?'PRONOSTIC VALIDÉ':'PRONOSTIC RATÉ',72,y+130)}}
-  await zzLogo(c,it.home,it.hl,196,y+22,58);await zzLogo(c,it.away,it.al,196,y+98,58);
-  c.fillStyle=ZN;c.font='700 30px '+ZBS;c.textBaseline='middle';c.textAlign='left';c.fillText(zzFit(c,it.home,320),270,y+52);c.fillText(zzFit(c,it.away,320),270,y+128);
-  c.fillStyle='#d6dbe9';c.fillRect(612,y+22,2,H-44);
-  const X=638;c.fillStyle=ZG;c.font='800 16px '+ZBS;c.fillText('PRONOSTIC PRINCIPAL',X,y+28);
+  zzRR(c,18,y,988,RH,16);c.fillStyle='#f5f7fb';c.fill();c.strokeStyle='#e0e5f0';c.lineWidth=2;c.stroke();
+  zzRR(c,28,y+26,84,40,12);c.fillStyle=ACC;c.fill();T(it.time,70,y+47,'800 25px '+ZFN,'#fff','center');
+  await zzLogoR(c,it.home,it.hl,124,y+10,72);await zzLogoR(c,it.away,it.al,365,y+10,72);
+  const NL=(t,x)=>{let f=22,L;do{c.font='800 '+f+'px '+ZFN;L=zzLines(c,t,108);f--}while(L.some(l=>l.includes('…'))&&f>=15);L.forEach((q,i,a)=>T(q,x,y+46+(i-(a.length-1)/2)*(f+4),c.font,'#0b1633','left'))};NL(it.hn||it.home,204);NL(it.an||it.away,445);
+  c.beginPath();c.arc(337,y+46,17,0,7);c.fillStyle='#e3edff';c.fill();T('VS',337,y+47,'800 15px '+ZBS,'#2563eb','center');
   const col={hi:'#1fa463',mid:'#f08c00',lo:'#d9534f'}[it.confK||'lo'];
-  if(it.main){c.fillStyle=ZN;c.font='800 27px '+ZBS;c.fillText(zzFit(c,it.main.t,290),X,y+60);zzRR(c,X+300,y+38,92,42,21);c.fillStyle=col;c.fill();c.fillStyle='#fff';c.font='800 24px '+ZBS;c.textAlign='center';c.fillText(Math.round(it.main.p*100)+'%',X+346,y+60);c.textAlign='left'}
-  else{c.fillStyle=ZG;c.font='700 25px '+ZBS;c.fillText('Match trop incertain',X,y+60)}
-  c.fillStyle=ZN;c.font='700 24px '+ZBS;if(it.score)c.fillText('Score probable : '+it.score.s+'  ('+Math.round(it.score.p*100)+'%)',X,y+98);
-  c.fillStyle=ZG;c.font='600 20px '+ZBS;c.fillText(zzFit(c,it.ex.map(x=>x.t.replace('Les deux équipes marquent : ','BTTS ').replace(' buts','')+' '+Math.round(x.p*100)+'%').join('  ·  '),360),X,y+128);
-  if(it.conf){c.fillStyle=col;c.font='800 19px '+ZBS;c.fillText('Confiance : '+it.conf,X,y+156)}
-  y+=H+G}
- c.fillStyle='#e3e7f1';c.fillRect(48,1262,984,2);c.fillStyle=ZG;c.font='500 21px '+ZBS;c.textBaseline='middle';c.textAlign='left';c.fillText('Estimations statistiques : ce ne sont pas des certitudes. Jouez avec modération.',48,1297);
- c.textAlign='right';c.font='700 21px '+ZBS;c.fillText('MD ZEZAYE · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),1032,1297);
+  T('PRONOSTIC PRINCIPAL',626,y+16,'800 12.5px '+ZBS,'#168a47','center');
+  if(it.main){zzRR(c,556,y+28,140,42,12);c.fillStyle=col;c.fill();const cd=ZCODE[it.main.k]||'';T(cd,626,y+50,'800 '+(cd.length>3?24:32)+'px '+ZBS,'#fff','center');{let sf=13,tx='('+it.main.t+')';c.font='600 '+sf+'px '+ZBS;while(c.measureText(tx).width>172&&sf>9){sf-=.5;c.font='600 '+sf+'px '+ZBS}T(zzFit(c,tx,172),626,y+84,c.font,'#168a47','center')}}
+  else T('Match trop incertain',626,y+50,'700 18px '+ZBS,ZG,'center');
+  T('SCORE PROBABLE',788,y+16,'800 12.5px '+ZBS,'#16213e','center');
+  if(it.score){zzRR(c,728,y+28,120,42,12);c.fillStyle='#0b1633';c.fill();T(String(it.score.s).replace('-',' - '),788,y+50,'800 32px '+ZBS,'#fff','center');
+   if(it.live)T('EN DIRECT '+it.live[0]+'-'+it.live[1],788,y+84,'800 13px '+ZBS,ZR,'center');
+   else if(it.res)T('RÉSULTAT '+it.res[0]+'-'+it.res[1]+(it.ok!=null?(it.ok?'  ✓ validé':'  ✗ raté'):''),788,y+84,'800 13px '+ZBS,it.ok===false?ZR:'#168a47','center')}
+  T('CONFIANCE',938,y+16,'800 12.5px '+ZBS,'#16213e','center');
+  if(it.main){const nb=Math.max(1,Math.min(5,Math.round(it.main.p*5)));for(let i=0;i<5;i++){zzRR(c,852+i*16,y+38,13,22,3);c.fillStyle=i<nb?col:'#dde3ee';c.fill()}T(Math.round(it.main.p*100)+'%',1000,y+49,'800 22px '+ZBS,'#0b1633','right');T(it.conf||'',926,y+84,'800 13px '+ZBS,col,'center')}
+  zzRR(c,28,y+96,950,24,8);c.fillStyle='#e8ecf6';c.fill();
+  if(it.ex&&it.ex.length){T('AUTRES MARCHÉS :',40,y+108,'800 12px '+ZBS,'#0f7a43','left');c.font='600 13px '+ZBS;let x=170;
+   for(const e of it.ex){const t='•  '+e.t.replace('Les deux équipes marquent : ','BTTS : ')+'  '+Math.round(e.p*100)+'%',w=c.measureText(t).width;if(x+w>972)break;T(t,x,y+108,c.font,'#2c3a5a','left');x+=w+22}}
+  y+=RH+GP}
+ // --- pied de page
+ const FY=H-122;
+ const ic=(x,y2)=>{c.lineWidth=3.5;c.strokeStyle='#16213e'};
+ c.strokeStyle='#16213e';c.lineWidth=3.5;c.beginPath();c.moveTo(62,FY+6);c.lineTo(88,FY+14);c.lineTo(88,FY+34);c.quadraticCurveTo(88,FY+52,62,FY+62);c.quadraticCurveTo(36,FY+52,36,FY+34);c.lineTo(36,FY+14);c.closePath();c.stroke();c.beginPath();c.moveTo(50,FY+34);c.lineTo(59,FY+43);c.lineTo(75,FY+24);c.stroke();
+ T('DES PRONOSTICS TRANSPARENTS',104,FY+16,'800 15px '+ZBS,'#16213e','left');T('Basés sur les statistiques de la saison',104,FY+36,'500 12.5px '+ZBS,ZG,'left');T('en cours, avec les probabilités affichées.',104,FY+52,'500 12.5px '+ZBS,ZG,'left');
+ c.beginPath();c.arc(412,FY+34,24,0,7);c.stroke();c.beginPath();c.arc(412,FY+34,14,0,7);c.stroke();c.beginPath();c.arc(412,FY+34,4,0,7);c.fillStyle='#16213e';c.fill();c.beginPath();c.moveTo(412,FY+34);c.lineTo(436,FY+10);c.stroke();
+ T('UNE ANALYSE APPROFONDIE',456,FY+16,'800 15px '+ZBS,'#16213e','left');T('Forme, buts, domicile et extérieur :',456,FY+36,'500 12.5px '+ZBS,ZG,'left');T('des matchs étudiés avec précision.',456,FY+52,'500 12.5px '+ZBS,ZG,'left');
+ c.beginPath();c.moveTo(716,FY+50);c.lineTo(708,FY+18);c.lineTo(728,FY+34);c.lineTo(742,FY+10);c.lineTo(756,FY+34);c.lineTo(776,FY+18);c.lineTo(768,FY+50);c.closePath();c.fillStyle='#16213e';c.fill();
+ T('MD ZEZAYE',792,FY+22,'800 26px '+ZFN,'#16213e','left');T('Estimations, pas des certitudes.',792,FY+48,'italic 600 13px '+ZBS,ZG,'left');
+ T('Estimations statistiques : ce ne sont pas des certitudes. Jouez avec modération.',512,H-50,'500 12.5px '+ZBS,ZG,'center');
+ c.fillStyle='#0b1633';c.fillRect(0,H-40,1024,40);c.fillStyle=ZR;c.fillRect(24,H-22,90,3);c.fillStyle='#2f6bff';c.fillRect(24,H-16,90,3);c.fillStyle=ZR;c.fillRect(910,H-22,90,3);c.fillStyle='#2f6bff';c.fillRect(910,H-16,90,3);
+ T("Le foot, c'est plus qu'un jeu !",512,H-20,'italic 700 25px '+ZFN,'#fff','center');
  return cv}
 const zzBlob=(cv,fmt)=>new Promise(r=>cv.toBlob(r,fmt==='jpg'?'image/jpeg':'image/png',fmt==='jpg'?.93:undefined));
 const zzFile=(d,fmt)=>'MD-ZEZAYE_'+d.comp.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-')+'_'+zzYmd(d.date)+(d.pages>1?'_'+d.page+'sur'+d.pages:'')+'.'+(fmt==='jpg'?'jpg':'png');
@@ -637,16 +700,16 @@ function zzHist(){const H=zzLH(),ks=Object.keys(H).sort().reverse();if(!ks.lengt
   return `<h3 class="zzh3">${zzLong(new Date(d+'T12:00'))}</h3>`+comps.map(c=>{const Z=E.filter(e=>e.comp===c).sort((a,b)=>a.ko-b.ko);
    const rows=Z.map(e=>{const fin=ALL.find(m=>m.done&&m.score&&m.comp===c&&zzYmd(m.kickoff)===d&&(sameT(m.home,e.home)||sameT(m.away,e.away))),ok=fin&&e.main?zzEv(e.main.k,fin.score[0],fin.score[1]):null;
     return `<div class="zzhr"><span>${e.time} · ${zzE(e.home)} – ${zzE(e.away)}</span><b>${e.main?zzE(e.main.t)+' '+Math.round(e.main.p*100)+'%':'—'}</b>${fin?`<small class="${ok?'ok':'ko'}">${fin.score[0]}-${fin.score[1]} ${ok==null?'':ok?'✓ validé':'✗ raté'}</small>`:''}</div>`}).join('');
-   const di=Z[0].dk,pgs=Math.ceil(Z.length/5);return `<div class="card"><div class="row" style="margin:0"><b style="color:var(--red)">${zzE(c)}</b><button class="chip" onclick="zzHistPoster('${d}','${zzE(c).replace(/'/g,"\\'")}')">👁️ Affiche${pgs>1?'s':''}</button></div>${rows}</div>`}).join('')}).join('')}
+   const di=Z[0].dk,pgs=Math.ceil(Z.length/zzPer());return `<div class="card"><div class="row" style="margin:0"><b style="color:var(--red)">${zzE(c)}</b><button class="chip" onclick="zzHistPoster('${d}','${zzE(c).replace(/'/g,"\\'")}')">👁️ Affiche${pgs>1?'s':''}</button></div>${rows}</div>`}).join('')}).join('')}
 function zzHistPoster(d,c){const H=zzLH(),Z=Object.keys(H).map(k=>H[k]).filter(e=>zzYmd(new Date(e.ko))===d&&e.comp===c).sort((a,b)=>a.ko-b.ko);if(!Z.length)return;
- ZZ.cur={id:'h|'+d+'|'+c,dk:Z[0].dk,date:new Date(d+'T12:00'),comp:c,page:1,pages:1,items:Z.slice(0,5)};zzPrev(null)}
+ ZZ.cur={id:'h|'+d+'|'+c,dk:Z[0].dk,date:new Date(d+'T12:00'),comp:c,page:1,pages:1,items:Z.slice(0,zzPer())};zzPrev(null)}
 // ---- page
-function zzPosterHTML(d,i){const k=d.id+'|'+zzHash(JSON.stringify(d.items)),u=ZZ.cache[k];
+function zzPosterHTML(d,i){const k=d.id+'|'+ZFM+'|'+zzHash(JSON.stringify(d.items)),u=ZZ.cache[k];
  return `<div class="card zzpo"><div class="zzpt"><b>${zzE(d.comp)}</b> · ${d.dk==='today'?"Aujourd'hui":'Demain'}${d.pages>1?' · affiche '+d.page+'/'+d.pages:''}</div>${u?`<img class="zzimg" src="${u}" alt="Affiche ${zzE(d.comp)}">`:`<div class="zzph" id="zp${i}" data-k="${zzE(k)}">Génération de l'affiche…</div>`}`+
   `<div class="zzbtns"><button class="chip on" onclick="zzSave(${i},'png')">📥 Télécharger en PNG</button><button class="chip on" onclick="zzSave(${i},'jpg')">📥 Télécharger en JPG</button><button class="chip" onclick="zzShare(${i})">📤 Partager l'image</button><button class="chip" onclick="zzPrev(${i})">👁️ Prévisualiser</button><button class="chip" onclick="zzRefresh(${i})">🔄 Actualiser les pronostics</button></div></div>`}
 async function zzBuild(){const tok=++ZZ.tok;
- for(let i=0;i<ZZ.P.length;i++){if(tok!==ZZ.tok)return;const d=ZZ.P[i],k=d.id+'|'+zzHash(JSON.stringify(d.items)),el=document.getElementById('zp'+i);if(!el||ZZ.cache[k])continue;
-  try{const cv=await zzDraw(d),t=document.createElement('canvas');t.width=540;t.height=675;t.getContext('2d').drawImage(cv,0,0,540,675);ZZ.cache[k]=t.toDataURL('image/jpeg',.88)}catch(e){el.textContent="Impossible de créer cette affiche";continue}
+ for(let i=0;i<ZZ.P.length;i++){if(tok!==ZZ.tok)return;const d=ZZ.P[i],k=d.id+'|'+ZFM+'|'+zzHash(JSON.stringify(d.items)),el=document.getElementById('zp'+i);if(!el||ZZ.cache[k])continue;
+  try{const cv=await zzDraw(d),t=document.createElement('canvas');t.width=540;t.height=Math.round(540*cv.height/cv.width);t.getContext('2d').drawImage(cv,0,0,t.width,t.height);ZZ.cache[k]=t.toDataURL('image/jpeg',.88)}catch(e){el.textContent="Impossible de créer cette affiche";continue}
   if(tok!==ZZ.tok)return;const e2=document.getElementById('zp'+i);if(e2){const im=document.createElement('img');im.className='zzimg';im.alt='Affiche '+d.comp;im.src=ZZ.cache[k];e2.replaceWith(im)}}}
 function zzDetCard(x){const m=x.m,P=x.P;let body='';
  const sc=m.live?m.live.score:m.done?m.score:null,mid=sc?`<b class="zzs">${sc[0]} - ${sc[1]}</b><small class="${m.live?'zzlv':''}">${m.live?(m.live.ht?'MT':'LIVE'):'FM'}</small>`:`<b class="zzs">${hm(m.kickoff)}</b>`;
@@ -667,7 +730,7 @@ function vZ(){const L=zzItems(),comps=[...new Set(L.map(x=>x.m.comp))];
  if(ZS.tab==='h')h+=zzHist();
  else if(ZS.tab==='m'){const X=L.filter(x=>(ZS.day==='both'||ZS.day===x.dk)&&(!ZS.comp||x.m.comp===ZS.comp)&&zzTM(x.m,ZS.team));
   h+=X.length?['today','tomorrow'].map(dk=>{const Y=X.filter(x=>x.dk===dk);return Y.length?`<h3 class="zzh3">${dk==='today'?"MATCHS D'AUJOURD'HUI":'MATCHS DE DEMAIN'}</h3>`+[...new Set(Y.map(x=>x.m.comp))].map(c=>`<div class="zzgh">${zzE(typeof cname==='function'?cname(c):c)}</div>`+Y.filter(x=>x.m.comp===c).map(zzDetCard).join('')).join(''):''}).join(''):`<div class="card sub">Aucun match disponible dans la source pour ce filtre.</div>`}
- else{const G=zzGroups(L);ZZ.P=G.out;h+=G.out.length?G.out.map(zzPosterHTML).join(''):`<div class="card sub">Aucune affiche à créer : aucun match avec assez de données pour ce filtre.</div>`;
+ else{const G=zzGroups(L);ZZ.P=G.out;h+=`<div class="chips"><span class="sub" style="align-self:center">Format :</span>${[['23','2:3 (modèle)'],['45','4:5']].map(x=>`<button class="chip ${ZFM===x[0]?'on':''}" onclick="ZFM='${x[0]}';try{localStorage.setItem('pl_zz_fmt','${x[0]}')}catch(e){}ZZ.cache={};go()">${x[1]}</button>`).join('')}</div>`;h+=G.out.length?G.out.map(zzPosterHTML).join(''):`<div class="card sub">Aucune affiche à créer : aucun match avec assez de données pour ce filtre.</div>`;
   if(G.skipped.length)h+=`<div class="sub">Pas assez de données pour un pronostic fiable : ${zzE(G.skipped.join(', '))}.</div>`;
   setTimeout(zzBuild,0)}
  try{zzSnap(L)}catch(e){}

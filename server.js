@@ -50,7 +50,7 @@ function logosRoute(res) {
 const ESPN = { "eng.1": "Premier League", "esp.1": "La Liga", "fra.1": "Ligue 1", "ger.1": "Bundesliga", "ita.1": "Serie A", "uefa.champions": "Ligue des champions", "uefa.europa": "Europa League",
   "ned.1": "Eredivisie", "por.1": "Primeira Liga", "bel.1": "Pro League belge", "sco.1": "Premiership écossaise", "tur.1": "Süper Lig", "gre.1": "Super League grecque" };
 let liveCache = { t: 0, v: [] };
-const dcache = {}, ymd8 = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
+const llogo = {}, dcache = {}, ymd8 = ms => new Date(ms).toISOString().slice(0, 10).replace(/-/g, "");
 // un jour précis (YYYYMMDD) ou le tableau par défaut ("") ; les jours à venir sont gardés 10 min, aujourd'hui et hier 45 s
 async function espnDay(sl, ds) {
   const key = sl + "|" + ds, ttl = ds && ds >= ymd8(Date.now() + 864e5) ? 10 * 6e4 : 45e3, c = dcache[key];
@@ -58,7 +58,7 @@ async function espnDay(sl, ds) {
   let events = [];
   try {
     const r = await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/" + sl + "/scoreboard" + (ds ? "?dates=" + ds : ""), { headers: { "User-Agent": "Mozilla/5.0" } });
-    if (r.ok) events = (await r.json()).events || [];
+    if (r.ok) { const j = await r.json(); events = j.events || []; const lgo = ((j.leagues || [])[0] || {}).logos; if (lgo && lgo[0] && lgo[0].href) llogo[sl] = lgo[0].href; }
   } catch {}
   dcache[key] = { t: Date.now(), events }; return events;
 }
@@ -69,7 +69,7 @@ function normEvent(sl, e) {
   const ev = (c.details || []).filter(d => d && (d.scoringPlay || d.yellowCard || d.redCard)).sort((x, y) => ((x.clock || {}).value || 0) - ((y.clock || {}).value || 0)).map(d => ({
     s: String((d.team || {}).id) === String(H.team.id) ? "h" : "a", m: (d.clock || {}).displayValue || "", n: ((d.athletesInvolved || [])[0] || {}).shortName || ((d.athletesInvolved || [])[0] || {}).displayName || "",
     g: !!d.scoringPlay, y: !!d.yellowCard, r: !!d.redCard, p: !!d.penaltyKick, o: !!d.ownGoal }));
-  return { comp: ESPN[sl], home: H.team.displayName, away: A.team.displayName, hl: H.team.logo, al: A.team.logo, date: e.date, state: ty.state, name: ty.name, clock: st.displayClock, hs: +H.score || 0, as: +A.score || 0, ev, id: e.id, lg: sl, hid: H.team.id, aid: A.team.id };
+  return { comp: ESPN[sl], home: H.team.displayName, away: A.team.displayName, hl: H.team.logo, al: A.team.logo, date: e.date, state: ty.state, name: ty.name, clock: st.displayClock, hs: +H.score || 0, as: +A.score || 0, ev, id: e.id, lg: sl, hid: H.team.id, aid: A.team.id, ll: llogo[sl] || "", hsn: H.team.shortDisplayName || "", asn: A.team.shortDisplayName || "" };
 }
 async function liveRoute(res) {
   const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
@@ -113,10 +113,30 @@ async function matchRoute(req, res) {
   } catch (e) { send(502, { error: "Réponse illisible" }); }
 }
 
+// Logos pour les affiches : même origine que l'appli, pour que le navigateur puisse créer de vraies images (sans « canvas contaminé »)
+const imgCache = {};
+async function imgRoute(req, res) {
+  const u = new URL(req.url, "http://x").searchParams.get("u") || "";
+  if (!/^https:\/\/(a\.espncdn\.com|crests\.football-data\.org)\/[\w\-./%]+$/.test(u)) { res.writeHead(403); return res.end(); }
+  try {
+    let c = imgCache[u];
+    if (!c) {
+      const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } });
+      if (!r.ok) { res.writeHead(502); return res.end(); }
+      c = { type: r.headers.get("content-type") || "image/png", buf: Buffer.from(await r.arrayBuffer()) };
+      if (c.buf.length > 3e6) { res.writeHead(502); return res.end(); }
+      if (Object.keys(imgCache).length > 400) for (const k of Object.keys(imgCache).slice(0, 100)) delete imgCache[k];
+      imgCache[u] = c;
+    }
+    res.writeHead(200, { "Content-Type": c.type, "Cache-Control": "public, max-age=86400" }); res.end(c.buf);
+  } catch { res.writeHead(502); res.end(); }
+}
+
 http.createServer(async (req, res) => {
   if (req.url === "/logos") return logosRoute(res);
   if (req.url.split("?")[0] === "/live") return liveRoute(res, req.url.includes("debug"));
   if (req.url.startsWith("/match?")) return matchRoute(req, res);
+  if (req.url.startsWith("/img?")) return imgRoute(req, res);
   if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h
     const p = req.url.slice(4);
     if (!/^\/(fixtures\.csv|mmz4281\/\d{4}\/(E0|SC0|SP1|F1|D1|I1|N1|P1|B1|T1|G1)\.csv)$/.test(p)) { res.writeHead(403); return res.end(); }
