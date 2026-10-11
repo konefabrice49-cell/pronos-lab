@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="dark">
+<html lang="fr" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#eef2fa;--card:#fff;--ink:#0b1633;--mut:#5a6788;--line:#dbe2f1;--acc:#2f6bff;--red:#d92d3a;--ok:#12994a;--sf:'Barlow',system-ui,sans-serif;--df:'Barlow Condensed','Arial Narrow',sans-serif}
+:root{--bg:#ffffff;--card:#f6f8fc;--ink:#0b1633;--mut:#5a6788;--line:#dbe2f1;--acc:#2f6bff;--red:#d92d3a;--ok:#12994a;--sf:'Barlow',system-ui,sans-serif;--df:'Barlow Condensed','Arial Narrow',sans-serif}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070d22;--card:#0f1a3a;--ink:#e8edfb;--mut:#8d9ac0;--line:#1e2c55;--acc:#5b93ff;--red:#ff5560;--ok:#34d27b}}
 :root[data-theme="dark"]{--bg:#070d22;--card:#0f1a3a;--ink:#e8edfb;--mut:#8d9ac0;--line:#1e2c55;--acc:#5b93ff;--red:#ff5560;--ok:#34d27b}
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -151,6 +151,14 @@ input.tx,input[type=date],input[type=time]{flex:1;min-width:0;padding:8px;border
 .zzmi img{display:block;width:100%;border-radius:10px;background:#fff}.zzx{all:unset;cursor:pointer;position:absolute;top:-8px;right:-4px;z-index:2;width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:18px}
 .zztoast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:90%;padding:10px 16px;border-radius:99px;background:var(--ink);color:var(--bg);font:600 13.5px var(--sf);opacity:0;pointer-events:none;transition:.25s}.zztoast.on{opacity:1;transform:translate(-50%,0)}
 .zzhr{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:13.5px}.zzhr small{width:100%}.zzhr small.ok{color:var(--ok)}.zzhr small.ko{color:var(--red)}
+.dtb{display:flex;gap:8px;overflow-x:auto;padding:6px 2px;scrollbar-width:none}.dtb::-webkit-scrollbar{display:none}
+.dtb button{all:unset;cursor:pointer;flex:none;padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--mut);font:700 14px var(--sf);white-space:nowrap}
+.dtb button:focus-visible{outline:2px solid var(--acc)}.dtb button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.dtb .lvb{color:var(--red);border-color:rgba(217,45,58,.35)}.dtb .lvb.on{background:var(--red);border-color:var(--red);color:#fff}.dtb .lvb.on .lv{background:#fff}
+.cnt2{display:inline-block;background:var(--red);color:#fff;border-radius:99px;font-size:11px;padding:1px 6px;margin-left:4px}.lvb.on .cnt2{background:#fff;color:var(--red)}
+.safe{display:inline-block;background:var(--ok);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:1px 7px;border-radius:99px;margin-right:6px;vertical-align:middle}
+.anm{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}.anm div{margin-top:4px;font-size:14px}
+:root[data-theme="light"] .card{box-shadow:0 2px 10px rgba(11,22,51,.07)}
 </style>
 </head>
 <body>
@@ -265,13 +273,13 @@ const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, faut
     done.push({comp:this.DIVS[d],home:r.HomeTeam,away:r.AwayTeam,kickoff:k,st:s,info:{home:h._i,away:a._i},done:true,score:[+r.FTHG,+r.FTAG],real:{yc:re("HY","AY"),sh:re("HS","AS"),fo:re("HF","AF"),th:[0,0],co:re("HC","AC")},_d:d})})}
   const o=Object.keys(this.DIVS);done.sort((a,b)=>b.kickoff-a.kickoff||o.indexOf(a._d)-o.indexOf(b._d));
   done.slice(0,MAX_DONE).forEach((m,i)=>{m.id=2000+i;push(m)});
-  st(n?"":"Aucun match à venir (calendrier mis à jour le mardi et le vendredi). Onglet « Terminés » pour les matchs joués.")}
+  st(n?"":"Aucun match dans le calendrier du site gratuit (mis à jour le mardi et le vendredi) : les matchs d'ESPN s'ajoutent automatiquement.")}
 };
 const Provider={demo:Demo,api:Api,csv:Csv}[MODE];
 
 // ===== ÉTAT ET ANALYSE =====
 const CR=[{k:'yc',n:'Cartons jaunes',i:'<i class="dot" style="background:#f5c518"></i>',lo:2,hi:8,s:.5},{k:'sh',n:'Tirs',i:'<i class="dot" style="background:#4f8cff"></i>',lo:14,hi:36,s:1},{k:'fo',n:'Fautes',i:'<i class="dot" style="background:#ff5560"></i>',lo:16,hi:32,s:1},{k:'th',n:'Touches',i:'<i class="dot" style="background:#a78bfa"></i>',lo:30,hi:50,s:1},{k:'co',n:'Corners',i:'<i class="dot" style="background:#34d27b"></i>',lo:6,hi:14,s:.5}];
-let ALL=[],S={fc:null,P:{f:{},a:{}},comps:new Set(),col:new Set(),day:null,det:null,cfg:{},rows:[],started:false,msg:'',v:'m',r:'today',c:'all',tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
+let ALL=[],S={fc:null,P:{f:{},a:{}},comps:new Set(),col:new Set(),day:null,det:null,cfg:{},rows:[],started:false,msg:'',v:'m',r:'day',dk:null,disc:[],c:'all',tgt:2,tol:.25,F:{yc:{on:1,min:4},sh:{on:0,min:24},fo:{on:1,min:22},th:{on:0,min:38},co:{on:1,min:10}}};
 const tot=(m,k)=>m.st[k][0]+m.st[k][1];
 const same=(a,b)=>a.toDateString()===b.toDateString();
 const base=()=>ALL.filter(inR);
@@ -281,12 +289,19 @@ const tipsOf=m=>S.rows.filter(r=>r.id==m.id).map(r=>{const c=CR.find(x=>x.k==r.k
  if(ol&&ol[line]){odd=ol[line];real=true}
  const p=pOver(line,mean);
  return{m,c,mean,line,p,real,odd:real?odd:Math.max(1.05,Math.round(.93/p*100)/100)}});
-function combos(tp){const res=[];(function rec(i,cur){
- if(cur.length>=2){const o=cur.reduce((a,t)=>a*t.odd,1);if(Math.abs(o-S.tgt)<=S.tol)res.push({legs:[...cur],odd:o,p:cur.reduce((a,t)=>a*t.p,1)})}
+function combos(tp){const all=[];(function rec(i,cur){
+ if(cur.length>=2)all.push({legs:[...cur],odd:cur.reduce((a,t)=>a*t.odd,1),p:cur.reduce((a,t)=>a*t.p,1)});
  if(cur.length==3)return;
  for(let j=i;j<tp.length;j++)for(const t of tp[j]){cur.push(t);rec(j+1,cur);cur.pop()}})(0,[]);
- return res.sort((a,b)=>b.p-a.p).slice(0,3)}
-const calc=()=>{const rs=S.rows.filter(r=>ALL.some(x=>x.id==r.id)),fl=S.started?[...new Set(rs.map(r=>r.id))].map(id=>ALL.find(x=>x.id==id)):[],tp=fl.map(tipsOf);return{rs,fl,tp,cb:combos(tp)}};
+ const inT=all.filter(c=>Math.abs(c.odd-S.tgt)<=S.tol).sort((a,b)=>b.p-a.p);if(inT.length)return inT.slice(0,3);
+ const r=all.sort((a,b)=>b.p-a.p).slice(0,3);r.forEach(c=>{c.out=true});return r}
+const ZSAFE=.8;
+function safeOf(t){const mean=t.mean,m=t.m,c=t.c;let l=Math.floor(t.line-1)+.5;if(l>t.line-1)l-=1;let line=null;
+ while(l>=.5){if(pOver(l,mean)>=ZSAFE){line=l;break}l-=1}
+ const noSafe=line==null;if(noSafe)line=.5;const p=pOver(line,mean),ol=m.odds&&m.odds[c.k],real=!!(ol&&ol[line]);
+ return{...t,orig:t.line,line,p,real,noSafe,odd:real?ol[line]:Math.max(1.05,Math.round(.93/p*100)/100)}}
+const tipsSafe=m=>{const seen=new Set();return tipsOf(m).map(safeOf).filter(x=>{const k=x.c.k+'|'+x.line;if(seen.has(k))return false;seen.add(k);return true})};
+const calc=()=>{const rs=S.rows.filter(r=>ALL.some(x=>x.id==r.id&&inD(x))),fl=S.started?[...new Set(rs.map(r=>r.id))].map(id=>ALL.find(x=>x.id==id)):[],tp=fl.map(tipsSafe);return{rs,fl,tp,cb:combos(tp)}};
 
 // ===== AFFICHAGE =====
 const $=s=>document.querySelector(s);
@@ -303,7 +318,7 @@ function rail(){const{rs,fl,tp,cb}=calc();
 
 try{Object.assign(S.P,JSON.parse(localStorage.getItem("pl")||"{}"))}catch(e){}
 const sp=(t,k,v)=>{S.P[t][k]=v;try{localStorage.setItem("pl",JSON.stringify(S.P))}catch(e){}};
-const inR=m=>S.r=='all'||(S.r=='live'?!!m.live:S.r=='done'?!!m.done:S.r=='today'?same(m.kickoff,new Date()):!m.done&&!m.live&&!same(m.kickoff,new Date())&&m.kickoff>new Date());
+const inR=m=>S.r==='live'?!!m.live:dkey(m.kickoff)===selDay();
 const esc=x=>(x||"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
 const mono=n=>{const w=n.replace(/[^A-Za-zÀ-ÿ ]/g,' ').trim().split(/\s+/);const t=(w.length>1?w[0][0]+w[1][0]:n.slice(0,3)).toUpperCase();let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return`<span class="lg" style="background:hsl(${h} 45% 32%)">${esc(t)}</span>`};
 const lg=(n,u)=>u?`<img class="lg" src="${esc(u)}" alt="${esc(n)}" loading="lazy" onerror="this.outerHTML=mono(this.alt)">`:mono(n);
@@ -322,7 +337,7 @@ const vs=m=>`${lg(m.home,m.homeLogo)} <b style="font-size:17px">${m.home} – ${
 const hit=t=>t.m.done&&t.m.real?(t.m.real[t.c.k][0]+t.m.real[t.c.k][1])>t.line:null;
 try{localStorage.removeItem('pl_code')}catch(e){} // ancien code d'accès IA
 const pbox=(t,k)=>`<textarea rows="3" placeholder="Colle ici ton prompt de ${t=='f'?'filtration':'analyse'} pour ${CR.find(c=>c.k==k).n}" oninput="sp('${t}','${k}',this.value)" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 14px var(--sf)">${esc(S.P[t][k])}</textarea><button class="chip" style="margin-top:6px" onclick="cp('${t}','${k}')">Copier prompt + matchs</button>`;
-function cp(t,k){const c=CR.find(x=>x.k==k),ms=t=='f'?ALL.filter(inR):calc().fl;
+function cp(t,k){const c=CR.find(x=>x.k==k),ms=t=='f'?ALL.filter(inD):calc().fl;
  const txt=(S.P[t][k]||"").trim()+"\n\nMatchs ("+c.n+") :\n"+ms.map(m=>`${m.comp} : ${m.home} - ${m.away} | ${m.home} ${f1(m.st[k][0])}, ${m.away} ${f1(m.st[k][1])}, total ${f1(tot(m,k))}`).join("\n");
  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert("Copié : colle-le dans Claude."),()=>alert("Copie impossible sur ce navigateur."))}
 const LN={yc:[2.5,3.5,4.5,5.5,6.5],sh:[20.5,22.5,24.5,26.5,28.5],fo:[20.5,22.5,24.5,26.5,28.5],th:[34.5,36.5,38.5,40.5,42.5],co:[7.5,8.5,9.5,10.5,11.5]};
@@ -347,7 +362,7 @@ function addManual(){const g=id=>(document.getElementById(id).value||'').trim(),
  const t=new Date(g('m-d')+'T'+(g('m-t')||'21:00'));if(isNaN(t)){S.mm='Date ou heure invalide.';S.mfOpen=true;return go()}
  const st={};for(const c of CR){const v=x=>{const n=parseFloat(g('m-'+c.k+'-'+x).replace(',','.'));return n>=0?n:0};st[c.k]=[v('h'),v('a')]}
  const L=lsM();L.push({home:h,away:a,t:t.toISOString(),st});try{localStorage.setItem('pl_manual',JSON.stringify(L))}catch(e){S.mm="Impossible d'enregistrer sur cet appareil.";S.mfOpen=true;return go()}
- mergeManual();S.mfOpen=false;S.mm='Match ajouté : '+h+' – '+a+'.';S.r='all';go()}
+ mergeManual();S.mfOpen=false;S.mm='Match ajouté : '+h+' – '+a+'.';S.r='day';S.dk=dkey(t);S.started=false;go()}
 function delManual(i){const L=lsM();L.splice(i,1);try{localStorage.setItem('pl_manual',JSON.stringify(L))}catch(e){}const mids=ALL.filter(m=>m.manual).map(m=>m.id);S.rows=S.rows.filter(r=>!mids.includes(r.id));S.mm='';mergeManual();go()}
 function manualForm(){const iso=new Date().toISOString().slice(0,10),L=lsM();
  return `<details class="card"${S.mfOpen?' open':''}><summary>＋ Ajouter un match de Ligue des champions</summary><div class="sub" style="margin-top:8px">Saisie manuelle : entre les moyennes par match de la saison en cours pour chaque équipe. Laisse vide ce que tu ne connais pas. L'appli ne vérifie pas ces chiffres.</div>
@@ -362,23 +377,32 @@ function tl(c,k,l){const o=cfg(c,k),i=o.sel.indexOf(l);i<0?o.sel.push(l):o.sel.s
 function al(c,k,v){v=Math.round(parseFloat(String(v).replace(',','.'))*2)/2;if(!(v>0))return go();const o=cfg(c,k);if(!LN[k].includes(v)&&!o.extra.includes(v))o.extra.push(v);if(!o.sel.includes(v))o.sel.push(v);o.sel.sort((a,b)=>a-b);svc();go()}
 function runFilter(c){const ks=CR.filter(x=>cfg(c,x.k).on&&cfg(c,x.k).sel.length).map(x=>x.k);
  if(!ks.length){S.msg='Coche un marché et au moins une ligne pour '+c+'.';return go()}
- const ms=ALL.filter(m=>m.comp==c&&inR(m));let add=0;
- for(const k of ks){S.rows=S.rows.filter(r=>!(r.k==k&&(ALL.find(x=>x.id==r.id)||{}).comp==c));
-  for(const L of cfg(c,k).sel)for(const m of ms)if(tot(m,k)>=L){S.rows.push({id:m.id,k,line:L});add++}}
- S.msg=add?add+' ligne(s) ajoutée(s) au tableau pour '+c+'.':'Aucun match de '+c+' n\'atteint les lignes choisies.';go()}
-function start(){if(!S.rows.length)return;S.started=true;go('a')}
+ const ms=ALL.filter(m=>m.comp==c&&inD(m));
+ if(!ms.length){S.msg='Aucun match de '+cname(c)+' '+dlabLe(selDay())+'.';return go()}
+ S.disc=S.disc.filter(x=>x.c!==c||!ms.some(m=>m.id==x.id));const keep=new Set();
+ for(const k of ks){S.rows=S.rows.filter(r=>!(r.k==k&&ms.some(m=>m.id==r.id)));S.disc=S.disc.filter(x=>!(x.c===c&&x.k===k));
+  const Ls=cfg(c,k).sel;
+  for(const m of ms){const okS=!m.noStats&&m.st[k][0]>0&&m.st[k][1]>0,v=tot(m,k);let kept=false;
+   if(okS)for(const L of Ls)if(v>=L){S.rows.push({id:m.id,k,line:L});kept=true}
+   if(kept)keep.add(m.id);else S.disc.push({c,id:m.id,k,v:okS?v:null,L:Math.min(...Ls)})}}
+ const out=ms.filter(m=>!keep.has(m.id)).length;
+ S.msg=keep.size?`${cname(c)} (${dlab(selDay())}) : ${keep.size} match(s) retenu(s), ${out} écarté(s).`:`${cname(c)} (${dlab(selDay())}) : aucun match ne correspond au marché choisi, ${out} écarté(s).`;go()}
+function clearDay(){S.rows=S.rows.filter(r=>{const m=ALL.find(x=>x.id==r.id);return !(m&&inD(m))});S.started=false;go()}
+function start(){if(!S.rows.some(r=>{const m=ALL.find(x=>x.id==r.id);return m&&inD(m)}))return;S.started=true;go('a')}
 const prompts=()=>`<details class="card"><summary>Mes prompts de filtration</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('f',c.k)}</div>`).join('')}</details>`;
-function tableau(){const rs=S.rows.map((r,i)=>({m:ALL.find(x=>x.id==r.id),k:r.k,line:r.line,i})).filter(r=>r.m);
- return `<h2>Matchs filtrés</h2>`+(rs.length?`<div class="card"><table class="tb"><tr><th>Match</th><th>Marché</th><th>Ligne</th><th>Moy.</th><th></th></tr>`+rs.map(r=>{const c=CR.find(x=>x.k==r.k);return `<tr><td style="cursor:pointer" onclick="od(${r.m.id})"><div class="sub" style="color:var(--red)">${r.m.comp}</div>${lg(r.m.home,r.m.homeLogo)}${lg(r.m.away,r.m.awayLogo)} ${r.m.home} – ${r.m.away}</td><td>${c.i} ${c.n}</td><td>+${f1(r.line)}</td><td>${f1(tot(r.m,r.k))}</td><td><button class="chip" onclick="S.rows.splice(${r.i},1);go()" aria-label="Retirer">✕</button></td></tr>`}).join('')+`</table><div class="row"><button class="chip on" onclick="start()">▶ Démarrer</button><button class="chip" onclick="S.rows=[];S.started=false;go()">Vider</button></div></div>`:`<div class="card">Le tableau est vide. Coche un marché, choisis tes lignes puis touche « Filtrer ».</div>`)}
-function vF(){const cs=[...S.comps];let h=`<h2>Filtre</h2>`;
+function tableau(){const rs=S.rows.map((r,i)=>({m:ALL.find(x=>x.id==r.id),k:r.k,line:r.line,i})).filter(r=>r.m&&inD(r.m));
+ return `<h2>Matchs filtrés · ${dlab(selDay())}</h2>`+(rs.length?`<div class="card"><table class="tb"><tr><th>Match</th><th>Marché</th><th>Ligne</th><th>Moy.</th><th></th></tr>`+rs.map(r=>{const c=CR.find(x=>x.k==r.k);return `<tr><td style="cursor:pointer" onclick="od(${r.m.id})"><div class="sub" style="color:var(--red)">${r.m.comp}</div>${lg(r.m.home,r.m.homeLogo)}${lg(r.m.away,r.m.awayLogo)} ${r.m.home} – ${r.m.away}</td><td>${c.i} ${c.n}</td><td>+${f1(r.line)}</td><td>${f1(tot(r.m,r.k))}</td><td><button class="chip" onclick="S.rows.splice(${r.i},1);go()" aria-label="Retirer">✕</button></td></tr>`}).join('')+`</table><div class="row"><button class="chip on" onclick="start()">▶ Démarrer</button><button class="chip" onclick="clearDay()">Vider</button></div></div>`:`<div class="card">Le tableau est vide. Coche un marché, choisis tes lignes puis touche « Filtrer ».</div>`)}
+function vF(){const cs=[...S.comps];let h=`<h2>Filtre</h2>`+dayBar(false)+`<div class="sub">Le filtre ne traite que les matchs <b>${dlabDe(selDay())}</b>.</div>`;
  if(!cs.length)h+=`<div class="card">Aucun championnat coché. Coche-en un dans l'onglet Matchs.<div class="row"><button class="chip" onclick="go('m')">Aller dans Matchs</button></div></div>`;
- for(const c of cs){const ms=ALL.filter(m=>m.comp==c&&inR(m));
-  h+=`<div class="card"><div class="row" style="margin:0"><b style="color:var(--red);font-size:18px">${cflag(c)} ${cname(c)}</b><button class="chip" data-c="${c}" onclick="tc(this.dataset.c,false)">Retirer</button></div><div class="sub">${ms.length} match(s) · ${{live:'en direct',today:"aujourd'hui",up:'à venir',done:'terminés',all:'tous'}[S.r]}</div>`+
+ for(const c of cs){const ms=ALL.filter(m=>m.comp==c&&inD(m));
+  h+=`<div class="card"><div class="row" style="margin:0"><b style="color:var(--red);font-size:18px">${cflag(c)} ${cname(c)}</b><button class="chip" data-c="${c}" onclick="tc(this.dataset.c,false)">Retirer</button></div><div class="sub">${ms.length} match(s) · ${dlab(selDay())}</div>`+
   CR.map(k=>{const o=cfg(c,k.k),dis=k.k=='th'&&MODE=='csv';
    return `<div class="mkt"><label><input type="checkbox" data-c="${c}" data-k="${k.k}" ${o.on?'checked':''} ${dis?'disabled':''} onchange="tm(this.dataset.c,this.dataset.k,this.checked)"> ${k.i} ${k.n}${dis?' <span class="sub">(indisponible)</span>':''}</label>`+
    (o.on?`<div class="sub" style="margin-top:6px">Lignes « Plus de » (garde les matchs dont la moyenne combinée atteint la ligne)</div><div class="lines">${[...new Set([...LN[k.k],...o.extra])].sort((a,b)=>a-b).map(l=>`<button class="chip sm ${o.sel.includes(l)?'on':''}" data-c="${c}" data-k="${k.k}" data-l="${l}" onclick="tl(this.dataset.c,this.dataset.k,+this.dataset.l)">${f1(l)}</button>`).join('')}<input class="ln" type="number" step=".5" placeholder="+ ligne" data-c="${c}" data-k="${k.k}" onchange="al(this.dataset.c,this.dataset.k,this.value)"></div>`:'')+`</div>`}).join('')+
   `<div class="row"><button class="chip on" data-c="${c}" onclick="runFilter(this.dataset.c)">Filtrer ${c}</button></div></div>`}
  if(S.msg)h+=`<div class="sub">${esc(S.msg)}</div>`;
+ const dd=S.disc.filter(x=>{const m=ALL.find(y=>y.id==x.id);return m&&inD(m)});
+ if(dd.length)h+=`<div class="card"><b>Matchs écartés (${dd.length})</b>`+dd.map(x=>{const m=ALL.find(y=>y.id==x.id),c=CR.find(y=>y.k==x.k);return `<div class="sub">✗ ${esc(m.home)} – ${esc(m.away)} · ${c.n} : ${x.v==null?'statistiques indisponibles':f1(x.v)+' attendu, sous la ligne '+f1(x.L)}</div>`}).join('')+`<div class="sub" style="margin-top:6px">Ces matchs ne sont pas analysés.</div></div>`;
  return h+tableau()+prompts()}
 const RT=[['live','En direct','<circle cx="12" cy="12" r="2.2"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.6 4.6a10.4 10.4 0 0 0 0 14.8M19.4 4.6a10.4 10.4 0 0 1 0 14.8"/>'],['today',"Aujourd'hui",'<rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/>'],['up','À venir','<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],['done','Terminés','<circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.7 2.7 4.9-5.4"/>'],['all','Tous','<circle cx="12" cy="12" r="8.5"/><path d="M12 8l3.6 2.6-1.4 4.2H9.8L8.4 10.6z"/>']];
 const hh=d=>String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');
@@ -418,6 +442,10 @@ const CN={'Premier League':['🇬🇧','Angleterre - Premier League'],'Champions
 'Süper Lig':['🇹🇷','Turquie - Süper Lig'],'Super League grecque':['🇬🇷','Grèce - Super League'],'Ligue des champions':['🇪🇺','Europe - Ligue des champions'],'Europa League':['🇪🇺','Europe - Europa League']};
 const cname=c=>CN[c]?CN[c][1]:c,cflag=c=>CN[c]?CN[c][0]:'🌍';
 const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const selDay=()=>S.dk||dkey(new Date());
+const dlabDe=k=>{const l=dlab(k);return l==="Aujourd'hui"?"d'aujourd'hui":l==='Hier'?"d'hier":l==='Demain'?'de demain':'du '+l};
+const dlabLe=k=>{const l=dlab(k);return l==="Aujourd'hui"?"aujourd'hui":l==='Hier'?'hier':l==='Demain'?'demain':'le '+l};
+const inD=m=>dkey(m.kickoff)===selDay();
 const dlab=k=>{const d=new Date(k+'T12:00'),t=new Date(),y=new Date(t),n=new Date(t);y.setDate(t.getDate()-1);n.setDate(t.getDate()+1);return k==dkey(t)?"Aujourd'hui":k==dkey(y)?'Hier':k==dkey(n)?'Demain':d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})};
 function tcol(c){S.col.has(c)?S.col.delete(c):S.col.add(c);go()}
 const evHtml=m=>{const E=m.events;if(!E||!E.length)return'';
@@ -428,39 +456,47 @@ const lrow=m=>{const lv=!!m.live,dn=!!m.done,sc=lv?m.live.score:dn?m.score:null,
  started=!lv&&!dn&&m.kickoff<new Date(),a=Math.round((Date.now()-m.kickoff)/6e4),
  cen=sc?`${sc[0]} - ${sc[1]}`:hh(m.kickoff).replace('h',':'),
  ic=!lv&&!dn?S.rows.filter(r=>r.id==m.id).map(r=>CR.find(x=>x.k==r.k).i).join(''):'';
- return `<div class="card lr" onclick="od(${m.id})"><div class="lst${lv?' red':''}">${mn}</div><div class="lh">${m.home}</div>${lg(m.home,m.homeLogo)}<div class="lcn"><b class="lsc">${cen}</b>${!sc&&S.r!='today'&&S.r!='live'&&!S.day?`<div class="dtl">${m.kickoff.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</div>`:''}</div>${lg(m.away,m.awayLogo)}<div class="la">${m.away}</div>${started?`<div class="sl">${a<=150?`Commencé il y a ${a} min · score indisponible`:'Résultat en attente'}</div>`:ic?`<div class="sl">${ic}</div>`:''}${evHtml(m)}</div>`};
+ return `<div class="card lr" onclick="od(${m.id})"><div class="lst${lv?' red':''}">${mn}</div><div class="lh">${esc(m.homeShort||m.home)}</div>${lg(m.home,m.homeLogo)}<div class="lcn"><b class="lsc">${cen}</b>${false?`<div class="dtl">${m.kickoff.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</div>`:''}</div>${lg(m.away,m.awayLogo)}<div class="la">${esc(m.awayShort||m.away)}</div>${started?`<div class="sl">${a<=150?`Commencé il y a ${a} min · score indisponible`:'Résultat en attente'}</div>`:ic?`<div class="sl">${ic}</div>`:''}${evHtml(m)}</div>`};
 const mrow=m=>`<div class="card mr" onclick="od(${m.id})"><div class="lgs">${lg(m.home,m.homeLogo)}${lg(m.away,m.awayLogo)}</div><div class="mtl"><b>${hh(m.kickoff)}</b> — ${m.home} vs ${m.away}${S.r!='today'&&S.r!='live'?`<div class="sub">${dl(m.kickoff)}</div>`:''}</div><div class="st">${stat(m)}</div></div>`;
 const calBtn=()=>`<div class="calr"><label class="calb"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></svg><span>${S.cal?dlab(S.cal):'Choisir un jour'}</span><input type="date" value="${S.cal||''}" onchange="pickDay(this.value)" aria-label="Choisir un jour dans le calendrier"></label>${S.cal?'<button class="chip" onclick="pickDay(\'\')">Effacer</button>':''}</div>`;
-function pickDay(v){S.cal=v||null;S.day=null;if(v&&(S.r==='live'||S.r==='today'))S.r='all';go()}
-function vM(){const b0=base().sort((x,y)=>x.kickoff-y.kickoff),days=[...new Set(b0.map(m=>dkey(m.kickoff)))].sort(),sd=S.cal||(days.includes(S.day)?S.day:null),b=sd?b0.filter(m=>dkey(m.kickoff)==sd):b0,nl=ALL.filter(m=>m.live).length,ti=RT.findIndex(t=>t[0]==S.r),pi=S.pi==null?ti:S.pi;
- const tabs=`<div class="tabs"><div class="seg" role="tablist"><span class="ind" style="transform:translateX(${pi*100}%)"></span>`+RT.map(t=>`<button role="tab" aria-selected="${S.r==t[0]}" class="${S.r==t[0]?'on':''}" onclick="S.r='${t[0]}';S.day=null;S.cal=null;go()">${t[0]=='live'&&nl?`<span class="cnt">${nl}</span>`:''}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t[2]}</svg><span>${t[1]}</span></button>`).join('')+`</div></div>`;
- const strip=['up','done','all'].includes(S.r)&&days.length>1?`<div class="days"><button class="${sd?'':'on'}" onclick="S.day=null;S.cal=null;go()">Tous</button>`+days.map(k=>`<button class="${sd==k?'on':''}" onclick="S.day='${k}';S.cal=null;go()">${dlab(k)}</button>`).join('')+`</div>`:'';
- let h=tabs+calBtn()+strip+`<div class="sub">${S.r=='live'?'Matchs en cours.':'Classés par heure de coup d\'envoi.'} Coche un championnat pour passer au filtre.</div>`;
- if(!b.length)h+=S.r=='live'?`<div class="card">Aucun match en direct pour le moment.${MODE=='csv'?`<div class="sub" style="margin-top:6px">La source gratuite actuelle ne fournit pas les scores en direct : un match commencé apparaît sous « Aujourd'hui », avec le temps écoulé depuis le coup d'envoi.</div>`:''}</div>`:`<div class="card">${S.cal?'Aucun match ce jour-là. Les données couvrent environ 7 jours en arrière et 4 jours en avant.':'Aucun match sur cette période. Essayez « Tous ».'}</div>`;
- for(const c of [...new Set(b.map(m=>m.comp))]){const n=S.rows.filter(r=>{const m=ALL.find(x=>x.id==r.id);return m&&m.comp==c}).length;
+function setDay(k){S.r='day';S.dk=k;S.cal=null;S.started=false;go()}
+function pickDay(v){S.cal=v||null;S.day=null;S.r='day';S.dk=v||dkey(new Date());S.started=false;go()}
+const dayKeys=()=>{const t=new Date(),k=[-1,0,1,2,3,4,5].map(o=>dkey(new Date(t.getFullYear(),t.getMonth(),t.getDate()+o,12))),sel=selDay();if(!k.includes(sel))k.push(sel);return k.sort()};
+const dayBar=(live)=>{const sel=selDay(),lv=S.r==='live',nl=ALL.filter(m=>m.live).length;return `<div class="tabs"><div class="dtb" role="tablist">`+(live?`<button role="tab" aria-selected="${lv}" class="lvb${lv?' on':''}" onclick="S.r='live';S.cal=null;go()"><i class="lv"></i> En direct${nl?` <span class="cnt2">${nl}</span>`:''}</button>`:'')+dayKeys().map(k=>`<button role="tab" aria-selected="${!(live&&lv)&&sel===k}" class="${!(live&&lv)&&sel===k?'on':''}" onclick="setDay('${k}')">${dlab(k)}</button>`).join('')+`</div></div>`};
+function vM(){const sel=selDay(),b=base().sort((x,y)=>x.kickoff-y.kickoff);
+ let h=dayBar(true)+calBtn()+`<div class="sub">${S.r==='live'?'Matchs en cours.':'Matchs '+dlabDe(sel)+' uniquement, classés par heure de coup d\'envoi.'} Coche un championnat pour passer au filtre.</div>`;
+ if(!b.length)h+=S.r==='live'?`<div class="card">Aucun match en direct pour le moment.${MODE=='csv'?`<div class="sub" style="margin-top:6px">La source gratuite actuelle ne fournit pas les scores en direct : un match commencé apparaît dans l'onglet de son jour, avec le temps écoulé depuis le coup d'envoi.</div>`:''}</div>`:`<div class="card">Aucun match ce jour-là. Les données couvrent environ 7 jours en arrière et 4 jours en avant.</div>`;
+ setTimeout(()=>{const a=document.querySelector('.dtb .on');if(a&&a.scrollIntoView)a.scrollIntoView({inline:'nearest',block:'nearest'})},0);
+ for(const c of [...new Set(b.map(m=>m.comp))]){const n=S.rows.filter(r=>b.some(m=>m.id==r.id&&m.comp==c)).length;
   h+=`<div class="gh"><label class="ck"><input type="checkbox" data-c="${c}" ${S.comps.has(c)?'checked':''} onchange="tc(this.dataset.c,this.checked)"> <span class="fl">${cflag(c)}</span><span class="gn">${cname(c)}</span>${n?` <span class="tag ok">${n} au tableau</span>`:''}</label><button class="cv${S.col.has(c)?' cl':''}" data-c="${c}" onclick="tcol(this.dataset.c)" aria-label="Replier ou déplier">⌃</button></div>`+(S.col.has(c)?'':b.filter(x=>x.comp==c).map(lrow).join(''))}
  return h+manualForm()+`<details class="card"><summary>Source des données : ${{demo:'démonstration',api:'API-Football',csv:'football-data.co.uk (CSV gratuit)'}[MODE]}</summary><p class="sub">La clé API reste côté serveur (variable API_KEY). Ajoutez ?demo à l'adresse pour les données de démonstration.</p></details>`}
 
-function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Ajoute des matchs au tableau dans Filtre, puis touche Démarrer.');
- return `<h2>Analyse</h2>`+pr+fl.map(m=>{const tp=tipsOf(m);if(!tp.length)return`<div class="card">${m.home} – ${m.away} : activez au moins un critère.</div>`;
- const k=[...tp].sort((a,b)=>b.p-a.p)[0];
- return `<div class="card" style="cursor:pointer" onclick="od(${m.id})"><div class="sub" style="color:var(--red)">${m.comp} · ${dl(m.kickoff)} ${hm(m.kickoff)}</div>${vs(m)}
- <div class="key">Point clé : ${k.c.n.toLowerCase()}, ${f1(k.mean)} attendus, ${pc(k.p)} de chances de dépasser ${f1(k.line)}.</div>`+
- tp.map(t=>`<div style="margin-top:10px"><div class="row" style="margin:0"><span>${t.c.i} ${t.c.n}</span><span class="sub">${m.home} ${f1(m.st[t.c.k][0])} + ${m.away} ${f1(m.st[t.c.k][1])} = <b>${f1(t.mean)}</b></span></div><div class="bar"><i class="${pcls(t.p)}" style="width:${t.p*100}%"></i></div><div class="sub">Plus de ${f1(t.line)} : ${pc(t.p)}</div>${whyBox(t)}</div>`).join('')+`</div>`}).join('')}
+const anaMk=(m,k,ts)=>{const c=CR.find(x=>x.k==k),a=m.st[k][0],b=m.st[k][1],t=a+b,ls=ts.map(x=>x.line).sort((x,y)=>x-y),I=m.info,pm=(((S.P||{}).a||{})[k]||'').trim(),nm=c.n.toLowerCase(),L=[];
+ L.push(`${esc(m.home)} : <b>${f1(a)}</b> ${nm} par match en moyenne · ${esc(m.away)} : <b>${f1(b)}</b>.`);
+ L.push(`Total attendu : <b>${f1(t)}</b> ${nm}.`);
+ L.push(`Lignes choisies : ${ls.map(l=>'plus de '+f1(l)+(t>=l?' (atteinte, marge '+f1(t-l)+')':' (non atteinte)')).join(' · ')}.`);
+ L.push(a===b?`Les deux équipes sont à égalité (${f1(a)} chacune).`:`${a>b?esc(m.home):esc(m.away)} apporte le plus (${f1(Math.max(a,b))} contre ${f1(Math.min(a,b))}).`);
+ if(I&&I.home&&I.away&&I.home.form&&I.away.form)L.push(`Forme (5 derniers) : ${esc(m.home)} ${esc(I.home.form)} · ${esc(m.away)} ${esc(I.away.form)}.`);
+ return `<div class="anm"><b>${c.i} ${c.n}</b>${L.map(x=>`<div>• ${x}</div>`).join('')}${pm?`<details class="sub" onclick="event.stopPropagation()"><summary>Prompt du marché</summary><div style="white-space:pre-wrap">${esc(pm)}</div></details>`:''}</div>`};
+function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;
+ if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Ajoute des matchs au tableau dans Filtre, puis touche Démarrer.');
+ return `<h2>Analyse</h2><div class="sub">Matchs ${dlabDe(selDay())} · analyse selon le marché choisi. Les pourcentages et les pronostics sont dans l'onglet Pronos.</div>`+pr+fl.map(m=>{const tp=tipsOf(m);if(!tp.length)return `<div class="card">${esc(m.home)} – ${esc(m.away)} : aucun marché choisi.</div>`;
+  return `<div class="card" style="cursor:pointer" onclick="od(${m.id})"><div class="sub" style="color:var(--red)">${esc(m.comp)} · ${dl(m.kickoff)} ${hm(m.kickoff)}</div>${vs(m)}`+[...new Set(tp.map(t=>t.c.k))].map(k=>anaMk(m,k,tp.filter(t=>t.c.k==k))).join('')+`</div>`}).join('')}
 
 function vP(){const{fl,tp}=calc();if(!fl.length)return empty('Aucun match analysé.');
- return `<h2>Pronostics</h2>`+fl.map((m,i)=>{const t=tp[i],best=[...t].sort((a,b)=>b.p-a.p)[0];
- return `<div class="card" style="cursor:pointer" onclick="od(${m.id})"><div class="sub" style="color:var(--red)">${m.comp}</div>${vs(m)}${m.done?` <span class="tag">Score ${m.score[0]}–${m.score[1]}</span>`:''}`+
- t.map(x=>`<div class="row"><div><b>${x===best?'★ ':''}Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Moyenne ${f1(x.mean)} · <span class="pp ${pcls(x.p)}">${pc(x.p)}</span>${x.real?'':' · cote simulée'}${hit(x)===null?'':' · réel '+f1(x.m.real[x.c.k][0]+x.m.real[x.c.k][1])+(hit(x)?' ✓':' ✗')}</div>${whyBox(x)}</div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
- (`<div class="sub">Cote simulée à partir de la probabilité quand la source ne fournit pas la cote du marché (corners, cartons, tirs, fautes).</div>`)}
+ return `<h2>Pronostics</h2><div class="sub">Pronostics « safe » des matchs ${dlabDe(selDay())} : une ligne plus basse que ton marché, pour réduire le risque.</div>`+fl.map((m,i)=>{const t=tp[i];
+  return `<div class="card" style="cursor:pointer" onclick="od(${m.id})"><div class="sub" style="color:var(--red)">${esc(m.comp)}</div>${vs(m)}${m.done?` <span class="tag">Score ${m.score[0]}–${m.score[1]}</span>`:''}`+
+  t.map(x=>`<div class="row"><div><b><span class="safe">SAFE</span>Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Marché choisi : plus de ${f1(x.orig)} · total attendu ${f1(x.mean)} · <span class="pp ${pcls(x.p)}">${pc(x.p)}</span>${x.noSafe?' · aucune ligne vraiment safe':''}${x.real?'':' · cote simulée'}${hit(x)===null?'':' · réel '+f1(x.m.real[x.c.k][0]+x.m.real[x.c.k][1])+(hit(x)?' ✓':' ✗')}</div>${whyBox(x)}</div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
+  `<div class="sub">Cote simulée à partir de la probabilité quand la source ne fournit pas la cote du marché.</div>`}
 
 function vG(){const{fl,cb}=calc();
- let h=`<h2>Pronostic global</h2><div class="card"><div class="row" style="margin:0"><label>Cote visée <input type="number" step=".05" min="1.2" max="10" value="${S.tgt}" onchange="S.tgt=+this.value||2;go()"></label><label>Écart toléré <input type="number" step=".05" min=".05" max="1" value="${S.tol}" onchange="S.tol=+this.value||.25;go()"></label></div></div>`;
+ let h=`<h2>Pronostic global</h2><div class="sub">Combinés des pronostics safe des matchs ${dlabDe(selDay())}.</div><div class="card"><div class="row" style="margin:0"><label>Cote visée <input type="number" step=".05" min="1.2" max="10" value="${S.tgt}" onchange="S.tgt=+this.value||2;go()"></label><label>Écart toléré <input type="number" step=".05" min=".05" max="1" value="${S.tol}" onchange="S.tol=+this.value||.25;go()"></label></div></div>`;
  if(fl.length<2)return h+empty('Il faut au moins 2 matchs analysés.');
- if(!cb.length)return h+empty('Aucune combinaison de 2 ou 3 matchs ne correspond à la cote visée.');
- return h+cb.map((c,i)=>`<div class="card"><div class="row" style="margin:0"><b style="font-size:17px">${i==0?'★ ':''}Combinaison ${i+1}</b><div class="big" style="color:var(--red)">${f2(c.odd)}</div></div>`+
- c.legs.map(t=>`<div class="row"><div><b class="lnk" onclick="od(${t.m.id})">${t.m.home} – ${t.m.away} ›</b><div class="sub">Plus de ${f1(t.line)} ${t.c.n.toLowerCase()} · moyenne ${f1(t.mean)} · ${pc(t.p)}${hit(t)===null?'':hit(t)?' · ✓ réussi':' · ✗ raté'}</div>${whyBox(t)}</div><b class="big" style="font-size:22px">${f2(t.odd)}</b></div>`).join('')+
- `<div class="key">Synthèse : ${c.legs.length} matchs, cote totale ${f2(c.odd)}, probabilité conjointe estimée à ${pc(c.p)}. Chaque sélection part d'une moyenne combinée supérieure à sa ligne.${c.legs.every(t=>hit(t)!==null)?` Résultat réel : ${c.legs.every(hit)?'gagné ✓':'perdu ✗'}.`:''}</div></div>`).join('')}
+ if(!cb.length)return h+empty('Aucun combiné possible avec ces matchs.');
+ if(cb[0].out)h+=`<div class="key">Cote visée ${f2(S.tgt)} non atteinte avec des pronostics safe (leurs cotes sont proches de 1,1) : voici les combinés les plus sûrs.</div>`;
+ return h+cb.map((c,i)=>`<div class="card"><div class="row" style="margin:0"><b style="font-size:17px">${i==0?'★ ':''}Combiné ${i+1}</b><div class="big" style="color:var(--red)">${f2(c.odd)}</div></div>`+
+  c.legs.map(t=>`<div class="row"><div><b class="lnk" onclick="od(${t.m.id})">${esc(t.m.home)} – ${esc(t.m.away)} ›</b><div class="sub"><span class="safe">SAFE</span>Plus de ${f1(t.line)} ${t.c.n.toLowerCase()} · marché choisi ${f1(t.orig)} · ${pc(t.p)}${hit(t)===null?'':hit(t)?' · ✓ réussi':' · ✗ raté'}</div>${whyBox(t)}</div><b class="big" style="font-size:22px">${f2(t.odd)}</b></div>`).join('')+
+  `<div class="key">Synthèse : ${c.legs.length} matchs, cote totale ${f2(c.odd)}, probabilité conjointe estimée à ${pc(c.p)}. Pronostics safe : chaque sélection utilise une ligne plus basse que le marché choisi.${c.legs.every(t=>hit(t)!==null)?` Résultat réel : ${c.legs.every(hit)?'gagné ✓':'perdu ✗'}.`:''}</div></div>`).join('')}
 
 const FM={V:'var(--ok)',N:'#f5a524',D:'var(--red)'};
 const TL={};
