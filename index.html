@@ -417,6 +417,14 @@ let LIVEID=9000000;const LGL={},SHF={Spurs:'Tottenham'};
 
 const tk=n=>{const k=nz(String(n).replace(/&/g,' '));return LA[k]||k};
 const sameT=(a,b)=>{const x=tk(a).split(' ').filter(Boolean),y=tk(b).split(' ').filter(Boolean);return x.length>0&&y.length>0&&(x.every(t=>y.includes(t))||y.every(t=>x.includes(t)))};
+let CLT=[];const CL_MIN=1;
+function clFind(id,name){let t=id!=null?CLT.find(x=>String(x.id)===String(id)):null;if(!t){const c=CLT.filter(x=>sameT(x.n,name)||sameT(x.s||'',name));if(c.length===1)t=c[0]}return t||null}
+function clStats(m){const h=clFind(m.espn&&m.espn.h,m.home),a=clFind(m.espn&&m.espn.a,m.away);
+ if(!h||!a||h.ms<CL_MIN||a.ms<CL_MIN)return null;
+ const st={};for(const k of['yc','sh','fo','co'])st[k]=[h[k],a[k]];if(['yc','sh','fo','co'].some(k=>st[k][0]==null||st[k][1]==null))return null;st.th=[0,0];
+ return{st,info:{home:{form:h.form,bm:h.bm,be:h.be,n:h.ms},away:{form:a.form,bm:a.bm,be:a.be,n:a.ms}}}}
+function enrichCL(){let ch=0;for(const m of ALL){if(m.comp!=='Ligue des champions'||m.manual||!m.noStats)continue;const r=clStats(m);if(r){m.st=r.st;m.info=r.info;delete m.noStats;ch++}}if(ch&&S.det==null)go();return ch}
+async function loadCL(n=0){if(MODE==='demo')return;try{const r=await fetch('/cl');if(r.status===202&&n<14)return setTimeout(()=>loadCL(n+1),8000);if(!r.ok)return;CLT=(await r.json()).teams||[];enrichCL()}catch(e){}}
 function mergeLive(list){
  for(const m of ALL)if(m.liveSrc){delete m.live;delete m.liveSrc}
  let ch=0;const now=Date.now();
@@ -429,10 +437,11 @@ function mergeLive(list){
   if(!m.homeLogo&&e.hl)m.homeLogo=e.hl;if(!m.awayLogo&&e.al)m.awayLogo=e.al;
   m.kickoff=k;
   if(m.noStats&&!m.enr&&MODE==='csv'){m.enr=1;Csv.statsFor(m.comp,m.home,m.away).then(r=>{if(r){m.st=r.st;m.info=r.info;delete m.noStats;if(S.det==null)go()}}).catch(()=>{})}
-  m.events=e.ev||[];m.espn={lg:e.lg,id:e.id,h:e.hid};if(e.ll)LGL[e.comp]=e.ll;if(e.hsn)m.homeShort=SHF[e.hsn]||e.hsn;if(e.asn)m.awayShort=SHF[e.asn]||e.asn;
+  m.events=e.ev||[];m.espn={lg:e.lg,id:e.id,h:e.hid,a:e.aid};if(e.ll)LGL[e.comp]=e.ll;if(e.hsn)m.homeShort=SHF[e.hsn]||e.hsn;if(e.asn)m.awayShort=SHF[e.asn]||e.asn;
   if(e.state==='in'){m.live={score:[e.hs,e.as],min:e.clock||null,ht:e.name==='STATUS_HALFTIME'};m.liveSrc='espn';delete m.done}
   else if(e.state==='post'&&!m.real&&!m.done){m.done=true;m.score=[e.hs,e.as]}
   ch++}
+ if(CLT.length)enrichCL();
  return ch}
 async function loadLive(){if(MODE==='demo')return;try{const r=await fetch('/live');if(!r.ok)return;mergeLive(await r.json());if(S.v==='m'&&S.det==null)go()}catch(e){}}
 const CN={'Premier League':['🇬🇧','Angleterre - Premier League'],'Championship':['🇬🇧','Angleterre - Championship'],'League One':['🇬🇧','Angleterre - League One'],'League Two':['🇬🇧','Angleterre - League Two'],'National League':['🇬🇧','Angleterre - National League'],
@@ -477,6 +486,7 @@ const anaMk=(m,k,ts)=>{const c=CR.find(x=>x.k==k),a=m.st[k][0],b=m.st[k][1],t=a+
  L.push(`Lignes choisies : ${ls.map(l=>'plus de '+f1(l)+(t>=l?' (atteinte, marge '+f1(t-l)+')':' (non atteinte)')).join(' · ')}.`);
  L.push(a===b?`Les deux équipes sont à égalité (${f1(a)} chacune).`:`${a>b?esc(m.home):esc(m.away)} apporte le plus (${f1(Math.max(a,b))} contre ${f1(Math.min(a,b))}).`);
  if(I&&I.home&&I.away&&I.home.form&&I.away.form)L.push(`Forme (5 derniers) : ${esc(m.home)} ${esc(I.home.form)} · ${esc(m.away)} ${esc(I.away.form)}.`);
+ if(m.comp==='Ligue des champions'&&I&&I.home&&I.away)L.push(`Base : ${I.home.n} match(s) de Ligue des champions pour ${esc(m.home)}, ${I.away.n} pour ${esc(m.away)}${Math.min(I.home.n,I.away.n)<3?' — échantillon très faible, à prendre avec prudence':''}.`);
  return `<div class="anm"><b>${c.i} ${c.n}</b>${L.map(x=>`<div>• ${x}</div>`).join('')}${pm?`<details class="sub" onclick="event.stopPropagation()"><summary>Prompt du marché</summary><div style="white-space:pre-wrap">${esc(pm)}</div></details>`:''}</div>`};
 function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;
  if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Ajoute des matchs au tableau dans Filtre, puis touche Démarrer.');
@@ -777,7 +787,7 @@ const zzBtn=()=>`<button class="zzr6${S.v==='z'?' on':''}" onclick="go('z')" ari
 const _lv=setInterval(()=>{if(typeof document.hidden==='undefined'||!document.hidden){loadLive();const dm=ALL.find(x=>x.id==S.det);if(dm&&dm.live)loadTL(dm)}},60000);if(_lv&&_lv.unref)_lv.unref();
 const _iv=setInterval(()=>{const a=document.activeElement;if(S.v=='m'&&S.r=='live'&&S.det==null&&!(a&&/INPUT|TEXTAREA/.test(a.tagName||'')))go()},60000);if(_iv&&_iv.unref)_iv.unref();
 go();
-(async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;mergeManual();go();loadLogos();loadLive()}
+(async()=>{try{ALL=[];const r=await Provider.matches(m=>{ALL.push(m);go()});if(Array.isArray(r))ALL=r;mergeManual();go();loadLogos();loadLive();loadCL()}
 catch(e){$('#st').textContent='';mergeManual();go();$('#app').insertAdjacentHTML('afterbegin',`<div class="card">Impossible de charger les données (${e.message}). Vérifiez la clé côté serveur ou <a href="?demo" style="color:var(--acc)">ouvrez le mode démonstration</a>.</div>`)}})();
 </script>
 </body>
