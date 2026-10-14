@@ -132,61 +132,63 @@ async function imgRoute(req, res) {
   } catch { res.writeHead(502); res.end(); }
 }
 
-// Statistiques de la Ligue des champions : matchs terminés de la saison (ESPN) -> moyennes par équipe, cache 3 h
-const CLS = { days: {}, events: {}, sum: {}, t: 0, busy: false, v: null };
+// Statistiques des compétitions européennes (Ligue des champions, Europa League) : matchs terminés de la saison (ESPN), moyennes par équipe, cache 3 h
+const EUS = {}, EU_SLUG = { cl: "uefa.champions", el: "uefa.europa" };
 const clNum = x => { const n = parseFloat(String(x).replace(",", ".")); return isNaN(n) ? null : n; };
 async function clJson(u) { const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0" } }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
-async function clBuild() {
-  CLS.busy = true;
+async function euBuild(key) {
+  const slug = EU_SLUG[key], S = EUS[key] || (EUS[key] = { days: {}, events: {}, sum: {}, t: 0, busy: false, v: null });
+  S.busy = true;
   try {
     const days = []; for (let k = 0; k <= 70; k++) days.push(ymd8(Date.now() - k * 864e5));
     for (let i = 0; i < days.length; i += 6) await Promise.all(days.slice(i, i + 6).map(async ds => {
-      if (CLS.days[ds] && ds < ymd8(Date.now() - 864e5)) return;          // jours anciens déjà lus
+      if (S.days[ds] && ds < ymd8(Date.now() - 864e5)) return;           // jours anciens déjà lus
       try {
-        const j = await clJson("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?dates=" + ds);
+        const j = await clJson("https://site.api.espn.com/apis/site/v2/sports/soccer/" + slug + "/scoreboard?dates=" + ds);
         for (const e of j.events || []) {
           const c = (e.competitions || [])[0]; if (!c) continue;
           if ((((c.status || e.status || {}).type) || {}).state !== "post") continue;
           const H = (c.competitors || []).find(x => x.homeAway === "home"), A = (c.competitors || []).find(x => x.homeAway === "away"); if (!H || !A) continue;
           const T = x => ({ id: String(x.team.id), n: x.team.displayName, s: x.team.shortDisplayName, g: +x.score || 0 });
-          CLS.events[e.id] = { id: e.id, date: e.date, h: T(H), a: T(A) };
+          S.events[e.id] = { id: e.id, date: e.date, h: T(H), a: T(A) };
         }
-        CLS.days[ds] = 1;
+        S.days[ds] = 1;
       } catch {}
     }));
-    const ids = Object.keys(CLS.events).filter(id => !CLS.sum[id]);
+    const ids = Object.keys(S.events).filter(id => !S.sum[id]);
     for (let i = 0; i < ids.length; i += 6) await Promise.all(ids.slice(i, i + 6).map(async id => {
       try {
-        const j = await clJson("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/summary?event=" + id), out = {};
+        const j = await clJson("https://site.api.espn.com/apis/site/v2/sports/soccer/" + slug + "/summary?event=" + id), out = {};
         for (const t of ((j.boxscore || {}).teams || [])) {
           const m = {}; for (const x of t.statistics || []) m[x.name] = clNum(x.displayValue);
           out[String((t.team || {}).id)] = { sh: m.totalShots, co: m.wonCorners, fo: m.foulsCommitted, yc: m.yellowCards };
         }
-        CLS.sum[id] = out;
+        S.sum[id] = out;
       } catch {}
     }));
-    const per = {};
-    for (const e of Object.values(CLS.events).sort((a, b) => new Date(a.date) - new Date(b.date)))
-      for (const [me, op] of [[e.h, e.a], [e.a, e.h]]) (per[me.id] = per[me.id] || { id: me.id, n: me.n, s: me.s, list: [] }).list.push({ f: me.g, c: op.g, st: (CLS.sum[e.id] || {})[me.id] });
+    const per = {}, evs = Object.values(S.events).sort((a, b) => new Date(a.date) - new Date(b.date));
+    for (const e of evs) for (const [me, op] of [[e.h, e.a], [e.a, e.h]]) (per[me.id] = per[me.id] || { id: me.id, n: me.n, s: me.s, list: [] }).list.push({ f: me.g, c: op.g, st: (S.sum[e.id] || {})[me.id] });
     const teams = Object.values(per).map(t => {
-      const L = t.list.slice(-8), S = L.filter(x => x.st && x.st.sh != null), avg = k => { const v = S.map(x => x.st[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
-      return { id: t.id, n: t.n, s: t.s, m: L.length, ms: S.length, yc: avg("yc"), sh: avg("sh"), fo: avg("fo"), co: avg("co"), form: L.slice(-5).map(x => x.f > x.c ? "V" : x.f < x.c ? "D" : "N").join(""), bm: L.reduce((a, x) => a + x.f, 0) / L.length, be: L.reduce((a, x) => a + x.c, 0) / L.length };
+      const L = t.list.slice(-8), X = L.filter(x => x.st && x.st.sh != null), avg = k => { const v = X.map(x => x.st[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+      return { id: t.id, n: t.n, s: t.s, m: L.length, ms: X.length, yc: avg("yc"), sh: avg("sh"), fo: avg("fo"), co: avg("co"), form: L.slice(-5).map(x => x.f > x.c ? "V" : x.f < x.c ? "D" : "N").join(""), bm: L.reduce((a, x) => a + x.f, 0) / L.length, be: L.reduce((a, x) => a + x.c, 0) / L.length };
     });
-    CLS.v = { teams, events: Object.keys(CLS.events).length, withStats: Object.values(CLS.sum).filter(o => Object.values(o).some(x => x.sh != null)).length, built: Date.now() };
-    CLS.t = Date.now();
-  } finally { CLS.busy = false; }
+    S.v = { teams, matches: evs.map(e => ({ d: e.date, h: e.h.n, a: e.a.n, hg: e.h.g, ag: e.a.g })), events: evs.length, withStats: Object.values(S.sum).filter(o => Object.values(o).some(x => x.sh != null)).length, built: Date.now() };
+    S.t = Date.now();
+  } finally { S.busy = false; }
 }
-function clRoute(res) {
+function euRoute(res, key) {
   const send = (s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
-  if (!CLS.v) { if (!CLS.busy) clBuild(); return send(202, { pending: true }); }
-  if (Date.now() - CLS.t > 3 * 36e5 && !CLS.busy) clBuild();
-  return send(200, CLS.v);
+  const S = EUS[key] || (EUS[key] = { days: {}, events: {}, sum: {}, t: 0, busy: false, v: null });
+  if (!S.v) { if (!S.busy) euBuild(key); return send(202, { pending: true }); }
+  if (Date.now() - S.t > 3 * 36e5 && !S.busy) euBuild(key);
+  return send(200, S.v);
 }
 
 http.createServer(async (req, res) => {
   if (req.url === "/logos") return logosRoute(res);
   if (req.url.split("?")[0] === "/live") return liveRoute(res, req.url.includes("debug"));
-  if (req.url.split("?")[0] === "/cl") return clRoute(res);
+  if (req.url.split("?")[0] === "/cl") return euRoute(res, "cl");
+  if (req.url.split("?")[0] === "/el") return euRoute(res, "el");
   if (req.url.startsWith("/match?")) return matchRoute(req, res);
   if (req.url.startsWith("/img?")) return imgRoute(req, res);
   if (req.url.startsWith("/csv/")) {                 // données gratuites football-data.co.uk (sans clé), cache 6 h

@@ -417,14 +417,16 @@ let LIVEID=9000000;const LGL={},SHF={Spurs:'Tottenham'};
 
 const tk=n=>{const k=nz(String(n).replace(/&/g,' '));return LA[k]||k};
 const sameT=(a,b)=>{const x=tk(a).split(' ').filter(Boolean),y=tk(b).split(' ').filter(Boolean);return x.length>0&&y.length>0&&(x.every(t=>y.includes(t))||y.every(t=>x.includes(t)))};
-let CLT=[];const CL_MIN=1;
-function clFind(id,name){let t=id!=null?CLT.find(x=>String(x.id)===String(id)):null;if(!t){const c=CLT.filter(x=>sameT(x.n,name)||sameT(x.s||'',name));if(c.length===1)t=c[0]}return t||null}
-function clStats(m){const h=clFind(m.espn&&m.espn.h,m.home),a=clFind(m.espn&&m.espn.a,m.away);
+const EU={'Ligue des champions':{url:'/cl',t:[],rows:[],ready:false},'Europa League':{url:'/el',t:[],rows:[],ready:false}},CL_MIN=1;
+function clFind(c,id,name){const T=EU[c].t;let t=id!=null?T.find(x=>String(x.id)===String(id)):null;if(!t){const k=T.filter(x=>sameT(x.n,name)||sameT(x.s||'',name));if(k.length===1)t=k[0]}return t||null}
+function clStats(m){if(!EU[m.comp])return null;const h=clFind(m.comp,m.espn&&m.espn.h,m.home),a=clFind(m.comp,m.espn&&m.espn.a,m.away);
  if(!h||!a||h.ms<CL_MIN||a.ms<CL_MIN)return null;
  const st={};for(const k of['yc','sh','fo','co'])st[k]=[h[k],a[k]];if(['yc','sh','fo','co'].some(k=>st[k][0]==null||st[k][1]==null))return null;st.th=[0,0];
  return{st,info:{home:{form:h.form,bm:h.bm,be:h.be,n:h.ms},away:{form:a.form,bm:a.bm,be:a.be,n:a.ms}}}}
-function enrichCL(){let ch=0;for(const m of ALL){if(m.comp!=='Ligue des champions'||m.manual||!m.noStats)continue;const r=clStats(m);if(r){m.st=r.st;m.info=r.info;delete m.noStats;ch++}}if(ch&&S.det==null)go();return ch}
-async function loadCL(n=0){if(MODE==='demo')return;try{const r=await fetch('/cl');if(r.status===202&&n<14)return setTimeout(()=>loadCL(n+1),8000);if(!r.ok)return;CLT=(await r.json()).teams||[];enrichCL()}catch(e){}}
+function enrichCL(){let ch=0;for(const m of ALL){if(!EU[m.comp]||m.manual||!m.noStats)continue;const r=clStats(m);if(r){m.st=r.st;m.info=r.info;delete m.noStats;ch++}}if(ch&&S.det==null)go();return ch}
+function loadCL(){if(MODE==='demo')return;for(const c of Object.keys(EU))loadEU(c,0)}
+async function loadEU(c,n){try{const r=await fetch(EU[c].url);if(r.status===202&&n<14)return setTimeout(()=>loadEU(c,n+1),8000);if(!r.ok){EU[c].ready=true;return}
+ const j=await r.json();EU[c].t=j.teams||[];EU[c].rows=(j.matches||[]).map(x=>({Date:x.d,HomeTeam:x.h,AwayTeam:x.a,FTHG:String(x.hg),FTAG:String(x.ag)}));EU[c].ready=true;enrichCL();if(S.v==='z')go()}catch(e){EU[c].ready=true}}
 function mergeLive(list){
  for(const m of ALL)if(m.liveSrc){delete m.live;delete m.liveSrc}
  let ch=0;const now=Date.now();
@@ -441,7 +443,7 @@ function mergeLive(list){
   if(e.state==='in'){m.live={score:[e.hs,e.as],min:e.clock||null,ht:e.name==='STATUS_HALFTIME'};m.liveSrc='espn';delete m.done}
   else if(e.state==='post'&&!m.real&&!m.done){m.done=true;m.score=[e.hs,e.as]}
   ch++}
- if(CLT.length)enrichCL();
+ if(Object.values(EU).some(e=>e.ready))enrichCL();
  return ch}
 async function loadLive(){if(MODE==='demo')return;try{const r=await fetch('/live');if(!r.ok)return;mergeLive(await r.json());if(S.v==='m'&&S.det==null)go()}catch(e){}}
 const CN={'Premier League':['🇬🇧','Angleterre - Premier League'],'Championship':['🇬🇧','Angleterre - Championship'],'League One':['🇬🇧','Angleterre - League One'],'League Two':['🇬🇧','Angleterre - League Two'],'National League':['🇬🇧','Angleterre - National League'],
@@ -486,7 +488,7 @@ const anaMk=(m,k,ts)=>{const c=CR.find(x=>x.k==k),a=m.st[k][0],b=m.st[k][1],t=a+
  L.push(`Lignes choisies : ${ls.map(l=>'plus de '+f1(l)+(t>=l?' (atteinte, marge '+f1(t-l)+')':' (non atteinte)')).join(' · ')}.`);
  L.push(a===b?`Les deux équipes sont à égalité (${f1(a)} chacune).`:`${a>b?esc(m.home):esc(m.away)} apporte le plus (${f1(Math.max(a,b))} contre ${f1(Math.min(a,b))}).`);
  if(I&&I.home&&I.away&&I.home.form&&I.away.form)L.push(`Forme (5 derniers) : ${esc(m.home)} ${esc(I.home.form)} · ${esc(m.away)} ${esc(I.away.form)}.`);
- if(m.comp==='Ligue des champions'&&I&&I.home&&I.away)L.push(`Base : ${I.home.n} match(s) de Ligue des champions pour ${esc(m.home)}, ${I.away.n} pour ${esc(m.away)}${Math.min(I.home.n,I.away.n)<3?' — échantillon très faible, à prendre avec prudence':''}.`);
+ if(EU[m.comp]&&I&&I.home&&I.away)L.push(`Base : ${I.home.n} match(s) de ${m.comp} pour ${esc(m.home)}, ${I.away.n} pour ${esc(m.away)}${Math.min(I.home.n,I.away.n)<3?' — échantillon très faible, à prendre avec prudence':''}.`);
  return `<div class="anm"><b>${c.i} ${c.n}</b>${L.map(x=>`<div>• ${x}</div>`).join('')}${pm?`<details class="sub" onclick="event.stopPropagation()"><summary>Prompt du marché</summary><div style="white-space:pre-wrap">${esc(pm)}</div></details>`:''}</div>`};
 function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts d'analyse par marché</summary>${CR.map(c=>`<div style="margin-top:10px"><b>${c.i} ${c.n}</b>${pbox('a',c.k)}</div>`).join('')}</details>`;
  if(!fl.length)return `<h2>Analyse</h2>`+pr+empty('Ajoute des matchs au tableau dans Filtre, puis touche Démarrer.');
@@ -559,6 +561,7 @@ function zzDemoRows(comp){if(ZZ.demo[comp])return ZZ.demo[comp];
  return ZZ.demo[comp]=rows}
 function zzRows(m){
  if(MODE==='demo')return zzDemoRows(m.comp);
+ if(EU[m.comp])return EU[m.comp].ready?EU[m.comp].rows:'load';
  if(typeof Csv==='undefined'||!Csv.res||!Csv.DIVS)return null;
  const d=Object.keys(Csv.DIVS).find(k=>Csv.DIVS[k]===m.comp);if(!d)return null;
  if(!Csv.res[d]){if(!ZZ.ld[d]&&Csv.text&&Csv.code)ZZ.ld[d]=Csv.text('/mmz4281/'+Csv.code+'/'+d+'.csv').then(t=>{Csv.res[d]=Csv.parse(t).filter(r=>r.HC!==undefined&&r.HC!=='')}).catch(()=>{Csv.res[d]=[]}).then(()=>{if(S.v==='z')go()});return 'load'}
@@ -575,7 +578,8 @@ function zzPredict(m){
  if(R&&R.length){const hn=zzName(R,m.home),an=zzName(R,m.away);
   if(hn&&an){const H=zzTeam(R,hn),T=zzTeam(R,an),n=R.length,lgH=R.reduce((s,r)=>s+(+r.FTHG||0),0)/n,lgA=R.reduce((s,r)=>s+(+r.FTAG||0),0)/n;
    o.ctx={hn,an,H,A:T,n,h2h:R.filter(r=>(r.HomeTeam===hn&&r.AwayTeam===an)||(r.HomeTeam===an&&r.AwayTeam===hn))};
-   if(H.length>=4&&T.length>=4&&n>=20&&lgH>0&&lgA>0){
+   const eu=!!EU[m.comp],minT=eu?1:4,minN=eu?10:20;
+   if(H.length>=minT&&T.length>=minT&&n>=minN&&lgH>0&&lgA>0){
     const k=3,sh=(x,c,l)=>(x*c+l*k)/(c+k),hh=H.filter(x=>x.h),aa=T.filter(x=>!x.h),rH=H.slice(-5),rA=T.slice(-5);
     const mix=(sp,re)=>re.length>=3?.6*sp+.4*re.reduce((s,x)=>s+x,0)/re.length:sp,av=(a,key)=>a.length?a.reduce((s,x)=>s+x[key],0)/a.length:0;
     const gfH=mix(sh(av(hh,'f'),hh.length,lgH),rH.map(x=>x.f)),gaH=mix(sh(av(hh,'c'),hh.length,lgA),rH.map(x=>x.c));
@@ -591,8 +595,8 @@ function zzPredict(m){
     A('Buts','O15','Plus de 1,5 buts',o15,xgs);A('Buts','U15','Moins de 1,5 buts',1-o15,xgs);A('Buts','O25','Plus de 2,5 buts',o25,xgs);A('Buts','U25','Moins de 2,5 buts',1-o25,xgs);
     A('Buts','O35','Plus de 3,5 buts',o35,xgs);A('Buts','U35','Moins de 3,5 buts',1-o35,xgs);A('Buts','BY','Les deux équipes marquent : OUI',bt,xgs);A('Buts','BN','Les deux équipes marquent : NON',1-bt,xgs);
     const bg=g=>o.all.filter(x=>x.g===g).sort((a,b)=>b.p-a.p)[0],r1=bg('Résultat'),dc=bg('Double chance'),gl=bg('Buts');
-    o.main=r1&&r1.p>=.5?r1:dc&&dc.p>=.62?dc:gl&&gl.p>=.58?gl:null;o.ok=true;
-    if(o.main){let c=o.main.p>=.7?2:o.main.p>=.58?1:0;if(Math.min(H.length,T.length)<6)c=Math.max(0,c-1);o.conf=['Prudente','Moyenne','Forte'][c];o.confK=['lo','mid','hi'][c]}}
+    o.main=r1&&r1.p>=.5?r1:dc&&dc.p>=.62?dc:gl&&gl.p>=.58?gl:null;o.ok=true;if(eu)o.note='Échantillon très faible : '+H.length+' match(s) de '+m.comp+' pour '+hn+', '+T.length+' pour '+an+' (aucune donnée des saisons passées).';
+    if(o.main){let c=o.main.p>=.7?2:o.main.p>=.58?1:0;if(Math.min(H.length,T.length)<6)c=Math.max(0,c-1);if(eu&&Math.min(H.length,T.length)<3)c=0;o.conf=['Prudente','Moyenne','Forte'][c];o.confK=['lo','mid','hi'][c]}}
    else o.note='Données de buts insuffisantes pour un pronostic fiable (moins de 4 matchs par équipe, ou saison trop récente).'}
   else o.note='Équipes non retrouvées dans les résultats de la saison de la source.'}
  else o.note=R===null?"Ce championnat n'a pas de résultats détaillés dans la source.":'Aucun résultat disponible pour ce championnat.';
@@ -685,7 +689,7 @@ async function zzDraw(d){
  T(arch?'ARCHIVE':d.dk==='today'?"AUJOURD'HUI":'DEMAIN',846,40,'800 25px '+ZFN,'#16213e','left');
  zzRR(c,792,64,202,40,20);c.fillStyle='#16213e';c.fill();T(String(d.date.getDate()).padStart(2,'0')+' / '+String(d.date.getMonth()+1).padStart(2,'0')+' / '+d.date.getFullYear(),893,85,'800 28px '+ZFN,'#fff','center');
  if(fcode)zzFlagDraw(c,fcode,826,124,132,84);
- c.save();c.translate(892,236);c.rotate(-.06);c.font='italic 700 28px '+ZFN;T(zzFit(c,d.comp,214),0,0,c.font,ACC,'center');if(cty)T(cty,0,28,'italic 700 28px '+ZFN,ACC,'center');c.restore();
+ c.save();c.translate(892,236);c.rotate(-.06);c.font='italic 700 28px '+ZFN;{let sf=28;while(c.measureText(d.comp).width>214&&sf>16){sf--;c.font='italic 700 '+sf+'px '+ZFN}}T(d.comp,0,0,c.font,ACC,'center');if(cty)T(cty,0,28,'italic 700 28px '+ZFN,ACC,'center');c.restore();
  // --- lignes de matchs
  const RH=128,GP=10,Y0=308,NIT=d.items.length;let y=Y0;
  for(let i=0;i<NIT;i++){const yy=Y0+i*(RH+GP);zzRR(c,18,yy,988,RH,16);c.fillStyle='#f5f7fb';c.fill();c.strokeStyle='#e0e5f0';c.lineWidth=2;c.stroke()}
