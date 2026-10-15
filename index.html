@@ -239,7 +239,21 @@ const Api={
 const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, fautes, cartons jaunes ; pas de touches)
  DIVS:{E0:"Premier League",SP1:"La Liga",F1:"Ligue 1",D1:"Bundesliga",I1:"Serie A",N1:"Eredivisie",P1:"Primeira Liga",B1:"Pro League belge",SC0:"Premiership écossaise",T1:"Süper Lig",G1:"Super League grecque"}, // ordre = priorité
  async text(p){const r=await fetch("/csv"+p);if(!r.ok)throw new Error("HTTP "+r.status);return r.text()},
- parse(t){const L=t.replace(/^(\uFEFF|ï»¿)/,"").trim().split(/\r?\n/),h=L[0].split(",");return L.slice(1).map(l=>{const c=l.split(","),o={};h.forEach((k,i)=>o[k]=c[i]);return o})},
+ parse(t){
+  const text=String(t||"").replace(/^\uFEFF/,"").replace(/^ï»¿/,"");
+  const rows=[];let row=[],field="",quoted=false;
+  for(let i=0;i<text.length;i++){
+   const ch=text[i];
+   if(quoted){if(ch==='"'&&text[i+1]==='"'){field+='"';i++}else if(ch==='"')quoted=false;else field+=ch;continue}
+   if(ch==='"'){quoted=true;continue}
+   if(ch===','){row.push(field);field="";continue}
+   if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(v=>v!==""))rows.push(row);row=[];field="";continue}
+   field+=ch;
+  }
+  if(field!==""||row.length){row.push(field);if(row.some(v=>v!==""))rows.push(row)}
+  if(!rows.length)return[];const h=rows.shift().map(k=>k.trim());
+  return rows.map(c=>{const o={};h.forEach((k,i)=>o[k]=(c[i]??"").trim());return o})
+ },
  dt(d,t){const[a,b,c]=d.split("/"),[hh,mm]=(t||"12:00").split(":").map(Number);return new Date(c.length==2?2000+ +c:+c,+b-1,+a,hh,mm)},
  async statsFor(comp,home,away){const d=Object.keys(this.DIVS).find(k=>this.DIVS[k]===comp);if(!d||!this.avg||!this.res)return null;
   if(!this.res[d]){try{this.res[d]=this.parse(await this.text(`/mmz4281/${this.code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}catch(e){this.res[d]=[]}}
@@ -298,9 +312,11 @@ function combos(tp){const all=[];(function rec(i,cur){
 const ZSAFE=.8;
 function safeOf(t){const mean=t.mean,m=t.m,c=t.c;let l=Math.floor(t.line-1)+.5;if(l>t.line-1)l-=1;let line=null;
  while(l>=.5){if(pOver(l,mean)>=ZSAFE){line=l;break}l-=1}
- const noSafe=line==null;if(noSafe)line=.5;const p=pOver(line,mean),ol=m.odds&&m.odds[c.k],real=!!(ol&&ol[line]);
- return{...t,orig:t.line,line,p,real,noSafe,odd:real?ol[line]:Math.max(1.05,Math.round(.93/p*100)/100)}}
-const tipsSafe=m=>{const seen=new Set();return tipsOf(m).map(safeOf).filter(x=>{const k=x.c.k+'|'+x.line;if(seen.has(k))return false;seen.add(k);return true})};
+ const noSafe=line==null;
+ if(noSafe)return{...t,orig:t.line,line:null,p:null,real:false,noSafe:true,odd:null};
+ const p=pOver(line,mean),ol=m.odds&&m.odds[c.k],real=!!(ol&&ol[line]);
+ return{...t,orig:t.line,line,p,real,noSafe:false,odd:real?ol[line]:Math.max(1.05,Math.round(.93/p*100)/100)}}
+const tipsSafe=m=>{const seen=new Set();return tipsOf(m).map(safeOf).filter(x=>{if(x.noSafe)return false;const k=x.c.k+'|'+x.line;if(seen.has(k))return false;seen.add(k);return true})};
 const calc=()=>{const rs=S.rows.filter(r=>ALL.some(x=>x.id==r.id&&inD(x))),fl=S.started?[...new Set(rs.map(r=>r.id))].map(id=>ALL.find(x=>x.id==id)):[],tp=fl.map(tipsSafe);return{rs,fl,tp,cb:combos(tp)}};
 
 // ===== AFFICHAGE =====
@@ -313,8 +329,8 @@ const empty=t=>`<div class="card">${t}<div class="row"><button class="chip" oncl
 
 function rail(){const{rs,fl,tp,cb}=calc();
  const v=[base().length,rs.length,fl.length,tp.flat().length,cb[0]?f2(cb[0].odd):'–'];
- const IC={m:'<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 5h-5L8 10z"/>',f:'<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',a:'<path d="M3 20h5v-5h5v-5h5V5h3"/>',p:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',g:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8"/>'};
- $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')" aria-label="${x[1]}"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[x[0]]}</svg><b>${v[i]}</b></div><span>${x[1]}</span></button>`).join('')+zzBtn()}
+ const IC={b:'<path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-7"/>',m:'<circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 5h-5L8 10z"/>',f:'<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',a:'<path d="M3 20h5v-5h5v-5h5V5h3"/>',p:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',g:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8"/>'};
+ $('#rail').innerHTML=[['m','Matchs'],['f','Filtre'],['a','Analyse'],['p','Pronos'],['g','Global'],['b','Bilan']].map((x,i)=>`<button class="${S.v==x[0]?'on':''}" onclick="go('${x[0]}')" aria-label="${x[1]}"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[x[0]]}</svg><b>${v[i]}</b></div><span>${x[1]}</span></button>`).join('')+zzBtn()}
 
 try{Object.assign(S.P,JSON.parse(localStorage.getItem("pl")||"{}"))}catch(e){}
 const sp=(t,k,v)=>{S.P[t][k]=v;try{localStorage.setItem("pl",JSON.stringify(S.P))}catch(e){}};
@@ -501,7 +517,7 @@ function vA(){const{fl}=calc();const pr=`<details class="card"><summary>Prompts 
 function vP(){const{fl,tp}=calc();if(!fl.length)return empty('Aucun match analysé.');
  return `<h2>Pronostics</h2><div class="sub">Pronostics « safe » des matchs ${dlabDe(selDay())} : une ligne plus basse que ton marché, pour réduire le risque.</div>`+fl.map((m,i)=>{const t=tp[i];
   return `<div class="card" style="cursor:pointer" onclick="od(${m.id})"><div class="sub" style="color:var(--red)">${esc(m.comp)}</div>${vs(m)}${m.done?` <span class="tag">Score ${m.score[0]}–${m.score[1]}</span>`:''}`+
-  t.map(x=>`<div class="row"><div><b><span class="safe">SAFE</span>Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Marché choisi : plus de ${f1(x.orig)} · total attendu ${f1(x.mean)} · <span class="pp ${pcls(x.p)}">${pc(x.p)}</span>${x.noSafe?' · aucune ligne vraiment safe':''}${x.real?'':' · cote simulée'}${hit(x)===null?'':' · réel '+f1(x.m.real[x.c.k][0]+x.m.real[x.c.k][1])+(hit(x)?' ✓':' ✗')}</div>${whyBox(x)}</div><div class="big">${f2(x.odd)}</div></div>`).join('')+`</div>`}).join('')+
+  (t.length?t.map(x=>`<div class="row"><div><b><span class="safe">SAFE</span>Plus de ${f1(x.line)} ${x.c.n.toLowerCase()}</b><div class="sub">Marché choisi : plus de ${f1(x.orig)} · total attendu ${f1(x.mean)} · <span class="pp ${pcls(x.p)}">${pc(x.p)}</span>${x.noSafe?' · aucune ligne vraiment safe':''}${x.real?'':' · cote simulée'}${hit(x)===null?'':' · réel '+f1(x.m.real[x.c.k][0]+x.m.real[x.c.k][1])+(hit(x)?' ✓':' ✗')}</div>${whyBox(x)}</div><div class="big">${f2(x.odd)}</div></div>`).join(''):`<div class="sub">Aucune ligne ne satisfait le seuil estimé de 80 % ; aucun pronostic « safe » n'est proposé pour ce match.</div>`)+`</div>`}).join('')+
   `<div class="sub">Cote simulée à partir de la probabilité quand la source ne fournit pas la cote du marché.</div>`}
 
 function vG(){const{fl,cb}=calc();
@@ -548,7 +564,7 @@ function vD(){const m=ALL.find(x=>x.id==S.det);if(!m){S.det=null;return''}
  (S.rows.some(r=>r.id==m.id)?`<h2>Pronostics et justifications</h2>`+tipsOf(m).map(t=>`<div class="card"><div class="row" style="margin:0"><div><b>Plus de ${f1(t.line)} ${t.c.n.toLowerCase()}</b><div class="sub"><span class="pp ${pcls(t.p)}">${pc(t.p)}</span></div></div><div class="big">${f2(t.odd)}</div></div>${why(t)}</div>`).join(''):`<h2>Pronostics</h2><div class="card">Aucun pronostic pour ce match : filtre-le dans l'onglet Filtre pour obtenir ses pronostics et leurs justifications.</div>`)+
  `<div class="sub">Source : ${{demo:'données de démonstration',api:'API-Football',csv:'football-data.co.uk'}[MODE]}. Moyennes sur les derniers matchs de championnat de chaque équipe.</div>`}
 function od(id){S.det=id;scrollTo(0,0);go()}
-function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML=S.det!=null?vD():{m:vM,f:vF,a:vA,p:vP,g:vG,z:vZ}[S.v]();tabAnim()}
+function go(v){if(v){S.v=v;S.det=null;if(v=='f')S.fc=null;scrollTo(0,0)}rail();$('#app').innerHTML=S.det!=null?vD():{m:vM,f:vF,a:vA,p:vP,g:vG,b:vB,z:vZ}[S.v]();tabAnim()}
 function th(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark'}
 $('#src').textContent={demo:'Démo',api:'API-Football',csv:'Données CSV'}[MODE];
 // ==================== BOUTON « PRONOSTICS MD ZEZAYE » : page ajoutée à l'interface existante ====================
@@ -779,6 +795,43 @@ function zzDetCard(x){const m=x.m,P=x.P;let body='';
    `<h4>Pourquoi</h4><div class="sub">${zzE(P.all[0]?P.all[0].why:'')}</div>`+(P.ctx?`<h4>Forme et confrontations directes</h4><div class="zzcols">${[[m.home,P.ctx.H],[m.away,P.ctx.A]].map(([n,T])=>`<div class="zzcol"><b>${zzE(n)}</b><div class="zzfm">${T.slice(-5).map(y=>`<i class="zz${y.res}">${y.res}</i>`).join('')}</div>${T.slice(-5).reverse().map(y=>`<div class="sub">${y.res} ${y.f}-${y.c} ${y.h?'vs':'@'} ${zzE(y.opp)}</div>`).join('')}</div>`).join('')}</div>`+(P.ctx.h2h.length?P.ctx.h2h.map(r=>`<div class="sub">${zzE(r.HomeTeam)} ${zzE(r.FTHG)}-${zzE(r.FTAG)} ${zzE(r.AwayTeam)}</div>`).join(''):`<div class="sub">Aucune confrontation directe cette saison dans la source (les saisons passées ne sont pas utilisées).</div>`):'')+
    `<div class="sub" style="margin-top:8px">Estimations statistiques à partir des résultats de la saison en cours : sans absences, arbitre ni enjeu. Ce ne sont pas des certitudes.</div></details>`}
  return `<div class="card zzc"><div class="zzr"><div class="zzn r">${zzE(m.home)}</div>${lg(m.home,m.homeLogo)}<div class="zzm">${mid}</div>${lg(m.away,m.awayLogo)}<div class="zzn">${zzE(m.away)}</div></div>${body}</div>`}
+// ===== BILAN DU MODÈLE : backtest chronologique sans données futures =====
+S.bm=S.bm||'co';S.bl=S.bl||8.5;
+const BT_COLS={yc:{h:'HY',a:'AY',label:'Cartons jaunes'},sh:{h:'HS',a:'AS',label:'Tirs'},fo:{h:'HF',a:'AF',label:'Fautes'},co:{h:'HC',a:'AC',label:'Corners'}};
+function btRun(rows,key,line){
+ const c=BT_COLS[key];if(!c)return{items:[],n:0};
+ const sorted=rows.map((r,i)=>({...r,_i:i,_date:Csv.dt(r.Date,r.Time)})).filter(r=>r.HomeTeam&&r.AwayTeam&&r.Date&&Number.isFinite(r._date.getTime())&&r.FTHG!==''&&r.FTHG!=null&&r[c.h]!==''&&r[c.h]!=null&&r[c.a]!==''&&r[c.a]!=null).sort((a,b)=>a._date-b._date);
+ const hist=new Map(),items=[];
+ const avg=(team)=>{const a=(hist.get(team)||[]).slice(-8).filter(x=>Number.isFinite(x));return a.length>=3?a.reduce((x,y)=>x+y,0)/a.length:null};
+ for(const r of sorted){
+  const hm=avg(r.HomeTeam),am=avg(r.AwayTeam);
+  if(hm!=null&&am!=null){const mu=hm+am,p=Math.max(0,Math.min(1,pOver(line,mu))),actual=(+r[c.h])+(+r[c.a]);items.push({p,hit:actual>line?1:0,actual,mu,date:r._date,home:r.HomeTeam,away:r.AwayTeam})}
+  // Append only after forecasting the current row: no future leakage.
+  for(const [team,val] of [[r.HomeTeam,+r[c.h]],[r.AwayTeam,+r[c.a]]]){if(!hist.has(team))hist.set(team,[]);hist.get(team).push(val)}
+ }
+ const n=items.length;if(!n)return{items,n:0,brier:null,acc80:null,observed80:null,meanP:null,rate:null};
+ const brier=items.reduce((a,x)=>a+(x.p-x.hit)**2,0)/n,meanP=items.reduce((a,x)=>a+x.p,0)/n,rate=items.reduce((a,x)=>a+x.hit,0)/n,hi=items.filter(x=>x.p>=.8),acc80=hi.length?hi.reduce((a,x)=>a+x.hit,0)/hi.length:null;
+ return{items,n,brier,meanP,rate,acc80,observed80:hi.length,loDate:items[0].date,hiDate:items[n-1].date};
+}
+function vB(){
+ const labels={yc:'Cartons jaunes',sh:'Tirs',fo:'Fautes',co:'Corners'};let available=[];
+ if(MODE==='csv'&&Csv.res)available=Object.keys(Csv.DIVS).filter(d=>Array.isArray(Csv.res[d])&&Csv.res[d].length).map(d=>({d,name:Csv.DIVS[d],rows:Csv.res[d]}));
+ if(MODE==='demo')return `<h2>Bilan du modèle</h2><div class="card"><b>Mode démonstration</b><p>Les données fictives ne permettent pas d'évaluer les performances réelles. Passe en mode CSV pour lancer le bilan.</p></div>`;
+ if(MODE!=='csv')return `<h2>Bilan du modèle</h2><div class="card">Le backtest de cette première version utilise les CSV de football-data.co.uk. Sélectionne le mode CSV pour l'utiliser.</div>`;
+ if(!available.length)return `<h2>Bilan du modèle</h2><div class="card"><b>Données historiques non chargées</b><p>Retourne à l'onglet Matchs et attends la fin du chargement des statistiques, puis ouvre de nouveau le Bilan.</p><p class="sub">Cette première version ne prétend pas avoir téléchargé des données qu'elle n'a pas reçues.</p><button class="chip" onclick="go('m')">Charger les matchs</button></div>`;
+ let results=available.map(x=>({...x,result:btRun(x.rows,S.bm,+S.bl)})).filter(x=>x.result.n);
+ let all=results.flatMap(x=>x.result.items),n=all.length,brier=n?all.reduce((a,x)=>a+(x.p-x.hit)**2,0)/n:null,rate=n?all.reduce((a,x)=>a+x.hit,0)/n:null,meanP=n?all.reduce((a,x)=>a+x.p,0)/n:null,hi=all.filter(x=>x.p>=.8),hr=hi.length?hi.reduce((a,x)=>a+x.hit,0)/hi.length:null;
+ const fpc=x=>x==null?'—':(100*x).toFixed(1).replace('.',',')+' %',metric=(name,val,sub='')=>`<div class="card"><div class="sub">${name}</div><div class="big">${val}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+ let h=`<h2>Bilan du modèle</h2><div class="sub">Backtest chronologique sur les CSV chargés. Chaque prévision utilise les 8 dernières observations disponibles par équipe (minimum 3), puis ajoute le match observé à l'historique. Les données sont limitées aux saisons présentes dans le CSV chargé.</div>`;
+ h+=`<div class="card"><label>Marché <select onchange="S.bm=this.value;go()">${Object.entries(labels).map(([k,v])=>`<option value="${k}" ${S.bm===k?'selected':''}>${v}</option>`).join('')}</select></label><label style="margin-left:10px">Ligne « plus de » <select onchange="S.bl=+this.value;go()">${[2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.5,28.5,29.5,30.5,31.5,32.5,33.5,34.5,35.5].map(v=>`<option value="${v}" ${+S.bl===v?'selected':''}>${v}</option>`).join('')}</select></label><p class="sub">Modèle de référence : moyenne des dernières observations et loi de Poisson. Ce bilan teste cette baseline ; il ne prouve pas que le modèle est bien calibré.</p></div>`;
+ if(!n)return h+`<div class="card">Aucun match n'a assez de données antérieures pour cette ligne et ce marché. Le résultat est vide plutôt que fabriqué.</div>`;
+ h+=`<div class="grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${metric('Matchs évalués',n)}${metric('Réussite observée',fpc(rate))}${metric('Probabilité moyenne annoncée',fpc(meanP))}${metric('Score de Brier',brier.toFixed(3),'Plus bas est meilleur ; 0 est parfait.')}${metric('Pronostics estimés ≥ 80 %',hi.length)}${metric('Réussite dans ce groupe',fpc(hr),'Des effectifs faibles rendent cette mesure très incertaine.')}</div>`;
+ h+=`<h3>Résultats par championnat</h3>`+results.map(x=>`<div class="card"><b>${x.name}</b><div class="sub">${x.result.n} prédictions · réussite ${fpc(x.result.rate)} · probabilité moyenne ${fpc(x.result.meanP)} · Brier ${x.result.brier.toFixed(3)}</div></div>`).join('');
+ const recent=all.slice(-20).reverse();h+=`<h3>Dernières prédictions du backtest</h3>`+recent.map(x=>`<div class="card"><div class="row"><div><b>${x.home} – ${x.away}</b><div class="sub">${x.date.toLocaleDateString('fr-FR')} · moyenne attendue ${x.mu.toFixed(1)}</div></div><div style="text-align:right"><b>${fpc(x.p)}</b><div class="sub">${x.hit?'Réussi':'Échoué'} · total ${x.actual}</div></div></div></div>`).join('');
+ h+=`<div class="card"><b>Limites du bilan</b><p>Il utilise les lignes de statistiques disponibles dans les CSV, pas des instantanés historiques de toutes les informations publiées à l'époque. Il ne prend pas en compte les compositions, blessures, arbitres ni cotes historiques. La ligne de marché et le modèle doivent être testés sur plusieurs saisons avant toute conclusion. Le score de Brier ci-dessus concerne l'événement binaire « total strictement supérieur à la ligne ».</p></div>`;
+ return h;
+}
+
 function vZ(){const L=zzItems(),comps=[...new Set(L.map(x=>x.m.comp))];
  let h=`<div class="zzban"><b>⚽ PRONOSTICS MD ZEZAYE</b><span>Pronostics générés automatiquement à partir des données de l'appli. Ce sont des estimations, jamais des certitudes.${MODE==='demo'?' <em>Démo : données fictives.</em>':''}</span></div>`;
  h+=`<div class="chips">${[['both','Les deux jours'],['today',"Aujourd'hui"],['tomorrow','Demain']].map(x=>`<button class="chip ${ZS.day===x[0]?'on':''}" onclick="ZS.day='${x[0]}';go()">${x[1]}</button>`).join('')}</div>`+
