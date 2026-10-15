@@ -1,24 +1,38 @@
-# Prono Lab — première version corrigée
+# Prono Lab — version 2 : moteur de référence amélioré
 
-## Changements
+## Changements repris de la première version
 
-- Ajout d'un onglet **Bilan** dans la navigation.
-- Ajout d'un backtest chronologique de référence pour les marchés corners, tirs, fautes et cartons jaunes, à partir des CSV déjà chargés.
-- Le backtest calcule les moyennes d'équipe avec les huit observations antérieures disponibles (minimum trois), prédit avant d'ajouter le match courant à l'historique, puis calcule réussite observée, probabilité moyenne, score de Brier et résultats par championnat.
-- Le parsing CSV gère désormais les champs entre guillemets, les virgules incluses dans les champs, les guillemets échappés et les fins de ligne CRLF.
-- Le système ne remplace plus silencieusement une sélection ne respectant pas le seuil de 80 % par une ligne artificielle à 0,5. Si aucune ligne ne respecte le seuil, aucun pronostic « safe » n'est affiché pour ce match.
-- Ajout d'un test automatisé simple pour le parsing CSV et le calcul du backtest.
+- Onglet **Bilan** pour évaluer les probabilités sur les CSV chargés.
+- Backtest chronologique : une prédiction est calculée avant que le match courant soit ajouté à l'historique.
+- Mesures du bilan : nombre de prédictions, taux observé, probabilité moyenne, score de Brier et résultats par championnat.
+- Parsing CSV gérant les champs entre guillemets, les virgules internes, les guillemets échappés et les fins de ligne CRLF.
+- Le système ne présente plus une ligne de remplacement artificielle comme un pronostic « safe » si aucune ligne ne respecte le seuil configuré.
 
-## Limites connues
+## Nouvelle correction du moteur
 
-- Le bilan utilise seulement les CSV présents en mémoire après le chargement des matchs, et non plusieurs saisons téléchargées automatiquement. Au début d'une saison, le nombre de prédictions peut donc être trop faible pour tirer des conclusions.
-- Les statistiques de référence sont une baseline simplifiée : moyenne des huit dernières observations, sans ajustement attaque/défense, terrain, adversaires, arbitre ni calibration. Le bilan ne démontre donc pas que le modèle est performant ; il donne un premier moyen de le mesurer.
-- Les CSV historiques contiennent les résultats finaux et ne fournissent pas nécessairement tous les instantanés de données tels qu'ils étaient connus avant le coup d'envoi. Le backtest empêche l'utilisation des lignes futures dans les moyennes d'équipe, mais ne peut pas reconstruire l'historique de disponibilité des sources externes.
-- Les cotes affichées par le moteur principal restent simulées quand aucune cote réelle n'est disponible. Elles ne doivent pas être interprétées comme des cotes de bookmaker.
-- L'historique centralisé persistant et la page complète de fraîcheur des sources ne sont pas inclus dans cette première modification.
+- Ajout d'une estimation par marché tenant compte de l'attaque de l'équipe et des statistiques concédées par l'adversaire.
+- Séparation domicile/extérieur : statistiques offensives à domicile et à l'extérieur, ainsi que les statistiques concédées dans ces mêmes contextes.
+- Lissage des estimations vers la moyenne du championnat pour réduire l'instabilité des petits échantillons.
+- Application du même estimateur aux matchs CSV à venir et au backtest historique pour les marchés pris en charge : cartons jaunes, tirs, fautes et corners.
+- Le backtest n'utilise que les matchs antérieurs à la date de la prédiction et n'ajoute le match courant qu'après calcul.
+- Si les données nécessaires sont insuffisantes, le modèle revient aux moyennes déjà disponibles pour l'affichage des matchs à venir; le bilan historique, lui, n'invente pas de prédiction et ignore ce match.
 
-## Tests exécutés
+## Tests
 
-Lancer `npm test` pour vérifier le parsing CSV, la génération chronologique de prédictions, les bornes des probabilités et le score de Brier sur un jeu synthétique.
+Lancer `npm test` pour tester le parseur CSV, l'estimateur attaque/défense, le backtest chronologique, les bornes des probabilités et le score de Brier sur des données synthétiques.
 
-Vérifications effectuées sur cette version : `node --check server.js`, vérification syntaxique du JavaScript intégré à `index.html` et `npm test`.
+Vérifications exécutées lors de la préparation de cette archive :
+
+- `node --check server.js`
+- vérification syntaxique du JavaScript intégré à `index.html`
+- `npm test`
+
+## Limites importantes
+
+- La distribution de probabilité reste une loi de Poisson. Cette version améliore l'estimation du total attendu mais ne prouve pas que Poisson est le meilleur modèle pour les tirs, fautes, corners ou cartons.
+- Les données du bilan proviennent des CSV actuellement chargés. Le projet ne télécharge pas encore automatiquement plusieurs saisons pour un backtest étendu.
+- Les CSV ne permettent pas toujours de reconstruire la disponibilité exacte de chaque information avant le coup d'envoi. Les compositions, blessures et cotes historiques ne sont pas incluses dans ce modèle.
+- L'arbitre n'est pas encore intégré au modèle de cartons.
+- Les cotes de remplacement restent simulées et ne démontrent aucune rentabilité.
+- Les historiques centralisés persistants et une page exhaustive de fraîcheur des sources restent à développer.
+- Les tests sont des tests techniques sur données synthétiques, pas une validation de performance sur des matchs réels. Ne pas interpréter cette version comme une garantie de pronostics gagnants.

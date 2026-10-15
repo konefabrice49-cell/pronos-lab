@@ -255,11 +255,30 @@ const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, faut
   return rows.map(c=>{const o={};h.forEach((k,i)=>o[k]=(c[i]??"").trim());return o})
  },
  dt(d,t){const[a,b,c]=d.split("/"),[hh,mm]=(t||"12:00").split(":").map(Number);return new Date(c.length==2?2000+ +c:+c,+b-1,+a,hh,mm)},
+ // Modèle attaque/défense par marché. Les lignes postérieures au coup d'envoi sont exclues.
+ estimateMarket(rows,home,away,key,beforeDate){
+  const cols={yc:{h:"HY",a:"AY"},sh:{h:"HS",a:"AS"},fo:{h:"HF",a:"AF"},co:{h:"HC",a:"AC"}}[key];if(!cols)return null;
+  const valid=(r,col)=>r[col]!==undefined&&r[col]!==""&&Number.isFinite(Number(r[col]));
+  const past=(rows||[]).filter(r=>r.Date&&r.HomeTeam&&r.AwayTeam&&valid(r,cols.h)&&valid(r,cols.a)&&(!beforeDate||this.dt(r.Date,r.Time)<beforeDate));
+  const teamN=n=>past.filter(r=>r.HomeTeam===n||r.AwayTeam===n).length;
+  if(teamN(home)<3||teamN(away)<3)return null;
+  const mean=(arr)=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+  const leagueH=mean(past.map(r=>+r[cols.h])),leagueA=mean(past.map(r=>+r[cols.a]));
+  if(!(leagueH>0)||!(leagueA>0))return null;
+  // Lissage vers la moyenne du championnat pour limiter les petits échantillons.
+  const shr=(arr,base)=>arr.length?(arr.reduce((a,b)=>a+b,0)+3*base)/(arr.length+3):base;
+  const homeAttack=shr(past.filter(r=>r.HomeTeam===home).map(r=>+r[cols.h]),leagueH);
+  const awayDefense=shr(past.filter(r=>r.AwayTeam===away).map(r=>+r[cols.h]),leagueH);
+  const awayAttack=shr(past.filter(r=>r.AwayTeam===away).map(r=>+r[cols.a]),leagueA);
+  const homeDefense=shr(past.filter(r=>r.HomeTeam===home).map(r=>+r[cols.a]),leagueA);
+  const h=Math.max(.01,homeAttack*awayDefense/leagueH),a=Math.max(.01,awayAttack*homeDefense/leagueA);
+  return {home:h,away:a,total:h+a,nHome:past.filter(r=>r.HomeTeam===home||r.AwayTeam===home).length,nAway:past.filter(r=>r.HomeTeam===away||r.AwayTeam===away).length};
+ },
  async statsFor(comp,home,away){const d=Object.keys(this.DIVS).find(k=>this.DIVS[k]===comp);if(!d||!this.avg||!this.res)return null;
   if(!this.res[d]){try{this.res[d]=this.parse(await this.text(`/mmz4281/${this.code}/${d}.csv`)).filter(r=>r.HC!==undefined&&r.HC!=="")}catch(e){this.res[d]=[]}}
   const rows=this.res[d],names=[...new Set(rows.flatMap(r=>[r.HomeTeam,r.AwayTeam]))],pick=n=>{const c=names.filter(x=>sameT(x,n));return c.length===1?c[0]:null};
   const hn=pick(home),an=pick(away);if(!hn||!an)return null;const h=this.avg(rows,hn),a=this.avg(rows,an);if(!h||!a)return null;
-  const st={};for(const k of ["yc","sh","fo","th","co"])st[k]=[h[k],a[k]];return{st,info:{home:h._i,away:a._i}}},
+  const st={};for(const k of ["yc","sh","fo","th","co"]){const e=this.estimateMarket(rows,hn,an,k,new Date());st[k]=e?[e.home,e.away]:[h[k],a[k]]}return{st,info:{home:h._i,away:a._i}}},
  async matches(push){
   const st=t=>{const e=document.getElementById("st");if(e)e.textContent=t};
   st("Chargement du calendrier…");
@@ -277,7 +296,7 @@ const Csv={ // football-data.co.uk : CSV gratuit, sans clé (tirs, corners, faut
    return {...Object.fromEntries(Object.entries(a).map(([k,v])=>[k,v/g.length])),_i:{form:fm,bm:bm/g.length,be:be/g.length,n:g.length}}};
   let n=0;
   for(const x of fx){const h=avg(res[x.Div],x.HomeTeam),a=avg(res[x.Div],x.AwayTeam);if(!h||!a)continue;
-   const s={};for(const k of ["yc","sh","fo","th","co"])s[k]=[h[k],a[k]];
+   const s={};for(const k of ["yc","sh","fo","th","co"]){const e=this.estimateMarket(res[x.Div],x.HomeTeam,x.AwayTeam,k,x.k);s[k]=e?[e.home,e.away]:[h[k],a[k]]}
    push({id:1000+n,comp:this.DIVS[x.Div],home:x.HomeTeam,away:x.AwayTeam,kickoff:x.k,st:s,info:{home:h._i,away:a._i}});n++}
   const done=[],MAX_DONE=12,old=now.getTime()-7*864e5;
   for(const d of Object.keys(res)){const rows=res[d];
@@ -801,13 +820,12 @@ const BT_COLS={yc:{h:'HY',a:'AY',label:'Cartons jaunes'},sh:{h:'HS',a:'AS',label
 function btRun(rows,key,line){
  const c=BT_COLS[key];if(!c)return{items:[],n:0};
  const sorted=rows.map((r,i)=>({...r,_i:i,_date:Csv.dt(r.Date,r.Time)})).filter(r=>r.HomeTeam&&r.AwayTeam&&r.Date&&Number.isFinite(r._date.getTime())&&r.FTHG!==''&&r.FTHG!=null&&r[c.h]!==''&&r[c.h]!=null&&r[c.a]!==''&&r[c.a]!=null).sort((a,b)=>a._date-b._date);
- const hist=new Map(),items=[];
- const avg=(team)=>{const a=(hist.get(team)||[]).slice(-8).filter(x=>Number.isFinite(x));return a.length>=3?a.reduce((x,y)=>x+y,0)/a.length:null};
+ const pastRows=[],items=[];
  for(const r of sorted){
-  const hm=avg(r.HomeTeam),am=avg(r.AwayTeam);
-  if(hm!=null&&am!=null){const mu=hm+am,p=Math.max(0,Math.min(1,pOver(line,mu))),actual=(+r[c.h])+(+r[c.a]);items.push({p,hit:actual>line?1:0,actual,mu,date:r._date,home:r.HomeTeam,away:r.AwayTeam})}
-  // Append only after forecasting the current row: no future leakage.
-  for(const [team,val] of [[r.HomeTeam,+r[c.h]],[r.AwayTeam,+r[c.a]]]){if(!hist.has(team))hist.set(team,[]);hist.get(team).push(val)}
+  const estimate=Csv.estimateMarket(pastRows,r.HomeTeam,r.AwayTeam,key,r._date);
+  if(estimate){const mu=estimate.total,p=Math.max(0,Math.min(1,pOver(line,mu))),actual=(+r[c.h])+(+r[c.a]);items.push({p,hit:actual>line?1:0,actual,mu,homeExpected:estimate.home,awayExpected:estimate.away,date:r._date,home:r.HomeTeam,away:r.AwayTeam})}
+  // La ligne courante n'est ajoutée qu'après la prédiction : aucune fuite du futur.
+  pastRows.push(r);
  }
  const n=items.length;if(!n)return{items,n:0,brier:null,acc80:null,observed80:null,meanP:null,rate:null};
  const brier=items.reduce((a,x)=>a+(x.p-x.hit)**2,0)/n,meanP=items.reduce((a,x)=>a+x.p,0)/n,rate=items.reduce((a,x)=>a+x.hit,0)/n,hi=items.filter(x=>x.p>=.8),acc80=hi.length?hi.reduce((a,x)=>a+x.hit,0)/hi.length:null;
@@ -822,12 +840,12 @@ function vB(){
  let results=available.map(x=>({...x,result:btRun(x.rows,S.bm,+S.bl)})).filter(x=>x.result.n);
  let all=results.flatMap(x=>x.result.items),n=all.length,brier=n?all.reduce((a,x)=>a+(x.p-x.hit)**2,0)/n:null,rate=n?all.reduce((a,x)=>a+x.hit,0)/n:null,meanP=n?all.reduce((a,x)=>a+x.p,0)/n:null,hi=all.filter(x=>x.p>=.8),hr=hi.length?hi.reduce((a,x)=>a+x.hit,0)/hi.length:null;
  const fpc=x=>x==null?'—':(100*x).toFixed(1).replace('.',',')+' %',metric=(name,val,sub='')=>`<div class="card"><div class="sub">${name}</div><div class="big">${val}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
- let h=`<h2>Bilan du modèle</h2><div class="sub">Backtest chronologique sur les CSV chargés. Chaque prévision utilise les 8 dernières observations disponibles par équipe (minimum 3), puis ajoute le match observé à l'historique. Les données sont limitées aux saisons présentes dans le CSV chargé.</div>`;
- h+=`<div class="card"><label>Marché <select onchange="S.bm=this.value;go()">${Object.entries(labels).map(([k,v])=>`<option value="${k}" ${S.bm===k?'selected':''}>${v}</option>`).join('')}</select></label><label style="margin-left:10px">Ligne « plus de » <select onchange="S.bl=+this.value;go()">${[2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.5,28.5,29.5,30.5,31.5,32.5,33.5,34.5,35.5].map(v=>`<option value="${v}" ${+S.bl===v?'selected':''}>${v}</option>`).join('')}</select></label><p class="sub">Modèle de référence : moyenne des dernières observations et loi de Poisson. Ce bilan teste cette baseline ; il ne prouve pas que le modèle est bien calibré.</p></div>`;
+ let h=`<h2>Bilan du modèle</h2><div class="sub">Backtest chronologique sur les CSV chargés. Chaque prévision utilise uniquement les matchs antérieurs au coup d'envoi, avec attaque et défense séparées domicile/extérieur et lissage vers la moyenne du championnat. Les données sont limitées aux saisons présentes dans le CSV chargé.</div>`;
+ h+=`<div class="card"><label>Marché <select onchange="S.bm=this.value;go()">${Object.entries(labels).map(([k,v])=>`<option value="${k}" ${S.bm===k?'selected':''}>${v}</option>`).join('')}</select></label><label style="margin-left:10px">Ligne « plus de » <select onchange="S.bl=+this.value;go()">${[2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.5,28.5,29.5,30.5,31.5,32.5,33.5,34.5,35.5].map(v=>`<option value="${v}" ${+S.bl===v?'selected':''}>${v}</option>`).join('')}</select></label><p class="sub">Modèle : intensité estimée par attaque à domicile/extérieur et statistiques concédées par l’adversaire, lissées vers la moyenne du championnat, puis loi de Poisson. Le bilan reste une évaluation historique et ne prouve pas à lui seul la rentabilité.</p></div>`;
  if(!n)return h+`<div class="card">Aucun match n'a assez de données antérieures pour cette ligne et ce marché. Le résultat est vide plutôt que fabriqué.</div>`;
  h+=`<div class="grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${metric('Matchs évalués',n)}${metric('Réussite observée',fpc(rate))}${metric('Probabilité moyenne annoncée',fpc(meanP))}${metric('Score de Brier',brier.toFixed(3),'Plus bas est meilleur ; 0 est parfait.')}${metric('Pronostics estimés ≥ 80 %',hi.length)}${metric('Réussite dans ce groupe',fpc(hr),'Des effectifs faibles rendent cette mesure très incertaine.')}</div>`;
  h+=`<h3>Résultats par championnat</h3>`+results.map(x=>`<div class="card"><b>${x.name}</b><div class="sub">${x.result.n} prédictions · réussite ${fpc(x.result.rate)} · probabilité moyenne ${fpc(x.result.meanP)} · Brier ${x.result.brier.toFixed(3)}</div></div>`).join('');
- const recent=all.slice(-20).reverse();h+=`<h3>Dernières prédictions du backtest</h3>`+recent.map(x=>`<div class="card"><div class="row"><div><b>${x.home} – ${x.away}</b><div class="sub">${x.date.toLocaleDateString('fr-FR')} · moyenne attendue ${x.mu.toFixed(1)}</div></div><div style="text-align:right"><b>${fpc(x.p)}</b><div class="sub">${x.hit?'Réussi':'Échoué'} · total ${x.actual}</div></div></div></div>`).join('');
+ const recent=all.slice(-20).reverse();h+=`<h3>Dernières prédictions du backtest</h3>`+recent.map(x=>`<div class="card"><div class="row"><div><b>${x.home} – ${x.away}</b><div class="sub">${x.date.toLocaleDateString('fr-FR')} · total attendu ${x.mu.toFixed(1)} (dom. ${x.homeExpected.toFixed(1)} + ext. ${x.awayExpected.toFixed(1)})</div></div><div style="text-align:right"><b>${fpc(x.p)}</b><div class="sub">${x.hit?'Réussi':'Échoué'} · total ${x.actual}</div></div></div></div>`).join('');
  h+=`<div class="card"><b>Limites du bilan</b><p>Il utilise les lignes de statistiques disponibles dans les CSV, pas des instantanés historiques de toutes les informations publiées à l'époque. Il ne prend pas en compte les compositions, blessures, arbitres ni cotes historiques. La ligne de marché et le modèle doivent être testés sur plusieurs saisons avant toute conclusion. Le score de Brier ci-dessus concerne l'événement binaire « total strictement supérieur à la ligne ».</p></div>`;
  return h;
 }
