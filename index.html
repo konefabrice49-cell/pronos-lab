@@ -419,8 +419,11 @@ const tk=n=>{const k=nz(String(n).replace(/&/g,' '));return LA[k]||k};
 const sameT=(a,b)=>{const x=tk(a).split(' ').filter(Boolean),y=tk(b).split(' ').filter(Boolean);return x.length>0&&y.length>0&&(x.every(t=>y.includes(t))||y.every(t=>x.includes(t)))};
 const EU={'Ligue des champions':{url:'/cl',t:[],rows:[],ready:false},'Europa League':{url:'/el',t:[],rows:[],ready:false}},CL_MIN=1;
 function clFind(c,id,name){const T=EU[c].t;let t=id!=null?T.find(x=>String(x.id)===String(id)):null;if(!t){const k=T.filter(x=>sameT(x.n,name)||sameT(x.s||'',name));if(k.length===1)t=k[0]}return t||null}
-function clStats(m){if(!EU[m.comp])return null;const h=clFind(m.comp,m.espn&&m.espn.h,m.home),a=clFind(m.comp,m.espn&&m.espn.a,m.away);
- if(!h||!a||h.ms<CL_MIN||a.ms<CL_MIN)return null;
+function clAgg(t,ko){if(!t.L)return t;const L=t.L.filter(x=>new Date(x.d).getTime()<=ko-9e6).slice(-8),S=L.filter(x=>x.sh!=null),av=k=>{const v=S.map(x=>x[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+ return{id:t.id,n:t.n,s:t.s,ms:S.length,m:L.length,yc:av('yc'),sh:av('sh'),fo:av('fo'),co:av('co'),form:L.slice(-5).map(x=>x.f>x.c?'V':x.f<x.c?'D':'N').join(''),bm:L.length?L.reduce((a,x)=>a+x.f,0)/L.length:0,be:L.length?L.reduce((a,x)=>a+x.c,0)/L.length:0}}
+function clStats(m){if(!EU[m.comp])return null;const h0=clFind(m.comp,m.espn&&m.espn.h,m.home),a0=clFind(m.comp,m.espn&&m.espn.a,m.away);
+ if(!h0||!a0)return null;const h=clAgg(h0,+m.kickoff),a=clAgg(a0,+m.kickoff);
+ if(h.ms<CL_MIN||a.ms<CL_MIN)return null;
  const st={};for(const k of['yc','sh','fo','co'])st[k]=[h[k],a[k]];if(['yc','sh','fo','co'].some(k=>st[k][0]==null||st[k][1]==null))return null;st.th=[0,0];
  return{st,info:{home:{form:h.form,bm:h.bm,be:h.be,n:h.ms},away:{form:a.form,bm:a.bm,be:a.be,n:a.ms}}}}
 function enrichCL(){let ch=0;for(const m of ALL){if(!EU[m.comp]||m.manual||!m.noStats)continue;const r=clStats(m);if(r){m.st=r.st;m.info=r.info;delete m.noStats;ch++}}if(ch&&S.det==null)go();return ch}
@@ -572,8 +575,10 @@ function zzTeam(R,name){return R.filter(r=>r.HomeTeam===name||r.AwayTeam===name)
 const zzAv=(a,k)=>{const v=a.map(x=>x[k]).filter(x=>x!=null);return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
 const zzCf=p=>p>=.7?['Forte','hi']:p>=.58?['Moyenne','mid']:['Prudente','lo'];
 const zzEv=(k,h,a)=>({'1':h>a,X:h==a,'2':h<a,'1X':h>=a,X2:h<=a,'12':h!=a,O15:h+a>1,U15:h+a<2,O25:h+a>2,U25:h+a<3,O35:h+a>3,U35:h+a<4,BY:h>0&&a>0,BN:h==0||a==0})[k];
+const zzBefore=(r,m)=>{const d=r.Date;if(!d)return true;if(/T/.test(String(d)))return new Date(d).getTime()<=m.kickoff-9e6;
+ const p=String(d).split('/');if(p.length!==3)return true;const y=+p[2]<100?2000+ +p[2]:+p[2],k=new Date(m.kickoff);return new Date(y,+p[1]-1,+p[0]).getTime()<new Date(k.getFullYear(),k.getMonth(),k.getDate()).getTime()};
 function zzPredict(m){
- const R=zzRows(m);if(R==='load')return{loading:true};
+ let R=zzRows(m);if(R==='load')return{loading:true};if(Array.isArray(R))R=R.filter(r=>zzBefore(r,m));
  const o={all:[],ctx:null,note:'',xg:null,scores:[],main:null,conf:null,ok:false},A=(g,k,t,p,why)=>o.all.push({g,k,t,p,why});
  if(R&&R.length){const hn=zzName(R,m.home),an=zzName(R,m.away);
   if(hn&&an){const H=zzTeam(R,hn),T=zzTeam(R,an),n=R.length,lgH=R.reduce((s,r)=>s+(+r.FTHG||0),0)/n,lgA=R.reduce((s,r)=>s+(+r.FTAG||0),0)/n;
@@ -582,14 +587,15 @@ function zzPredict(m){
    if(H.length>=minT&&T.length>=minT&&n>=minN&&lgH>0&&lgA>0){
     const k=3,sh=(x,c,l)=>(x*c+l*k)/(c+k),hh=H.filter(x=>x.h),aa=T.filter(x=>!x.h),rH=H.slice(-5),rA=T.slice(-5);
     const mix=(sp,re)=>re.length>=3?.6*sp+.4*re.reduce((s,x)=>s+x,0)/re.length:sp,av=(a,key)=>a.length?a.reduce((s,x)=>s+x[key],0)/a.length:0;
-    const gfH=mix(sh(av(hh,'f'),hh.length,lgH),rH.map(x=>x.f)),gaH=mix(sh(av(hh,'c'),hh.length,lgA),rH.map(x=>x.c));
-    const gfA=mix(sh(av(aa,'f'),aa.length,lgA),rA.map(x=>x.f)),gaA=mix(sh(av(aa,'c'),aa.length,lgH),rA.map(x=>x.c));
+    const E=(sp,al,key,lv)=>sp.length>=2?sh(av(sp,key),sp.length,lv):sh(av(al,key),al.length,lv);
+    const gfH=mix(E(hh,H,'f',lgH),rH.map(x=>x.f)),gaH=mix(E(hh,H,'c',lgA),rH.map(x=>x.c));
+    const gfA=mix(E(aa,T,'f',lgA),rA.map(x=>x.f)),gaA=mix(E(aa,T,'c',lgH),rA.map(x=>x.c));
     const lh=Math.max(.2,lgH*(gfH/lgH)*(gaA/lgH)),la=Math.max(.2,lgA*(gfA/lgA)*(gaH/lgA));o.xg=[lh,la];
     let w=0,d=0,l=0,o15=0,o25=0,o35=0,bt=0,tot=0;const sc=[];
     for(let i=0;i<=9;i++)for(let j=0;j<=9;j++){const p=Math.exp(-lh)*Math.pow(lh,i)/ZF[i]*Math.exp(-la)*Math.pow(la,j)/ZF[j];tot+=p;if(i>j)w+=p;else if(i==j)d+=p;else l+=p;if(i+j>1)o15+=p;if(i+j>2)o25+=p;if(i+j>3)o35+=p;if(i>0&&j>0)bt+=p;if(i<=5&&j<=5)sc.push({s:i+'-'+j,p})}
     w/=tot;d/=tot;l/=tot;o15/=tot;o25/=tot;o35/=tot;bt/=tot;sc.forEach(x=>x.p/=tot);o.scores=sc.sort((a,b)=>b.p-a.p).slice(0,3);
     const xgs=`Buts attendus : ${f1(lh)} pour ${m.home}, ${f1(la)} pour ${m.away}.`,
-     base=`${xgs} Calcul : ${hn} (${f1(av(hh,'f'))} marqué(s) et ${f1(av(hh,'c'))} encaissé(s) par match à domicile) contre ${an} (${f1(av(aa,'f'))} marqué(s) et ${f1(av(aa,'c'))} encaissé(s) à l'extérieur), forme des 5 derniers matchs incluse.`;
+     base=`${xgs} Calcul : ${hn} (${f1(av(hh.length>=2?hh:H,'f'))} marqué(s) et ${f1(av(hh.length>=2?hh:H,'c'))} encaissé(s) par match ${hh.length>=2?'à domicile':'sur tous ses matchs'}) contre ${an} (${f1(av(aa.length>=2?aa:T,'f'))} marqué(s) et ${f1(av(aa.length>=2?aa:T,'c'))} encaissé(s) ${aa.length>=2?'à l\'extérieur':'sur tous ses matchs'}), uniquement avec des matchs joués avant celui-ci.`;
     A('Résultat','1',`Victoire ${m.home}`,w,base);A('Résultat','X','Match nul',d,base);A('Résultat','2',`Victoire ${m.away}`,l,base);
     A('Double chance','1X',`${m.home} ou nul (1X)`,w+d,base);A('Double chance','X2',`Nul ou ${m.away} (X2)`,d+l,base);A('Double chance','12','Pas de match nul (12)',w+l,base);
     A('Buts','O15','Plus de 1,5 buts',o15,xgs);A('Buts','U15','Moins de 1,5 buts',1-o15,xgs);A('Buts','O25','Plus de 2,5 buts',o25,xgs);A('Buts','U25','Moins de 2,5 buts',1-o25,xgs);
@@ -614,8 +620,10 @@ function zzItem(m,P){if(!P.ok)return null;const sh=m.homeShort||m.home,sa=m.away
   main:P.main?{t:fx(P.main.t),k:P.main.k,p:P.main.p}:null,conf:P.conf,confK:P.confK,score:P.scores[0]||null,ex};
  if(m.done&&m.score){it.res=m.score;it.ok=P.main?zzEv(P.main.k,m.score[0],m.score[1]):null}else if(m.live){it.live=m.live.score}
  return it}
+function zzFreeze(it,m){if(!it||m.kickoff>=Date.now())return it;const old=zzLH()[it.key];if(!old)return it;
+ const r=Object.assign({},old,{res:it.res,live:it.live,ok:it.ok});if(it.res&&old.main)r.ok=zzEv(old.main.k,it.res[0],it.res[1]);return r}
 function zzItems(){const t0=new Date(),t1=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()+1,12),L=[];
- for(const [dk,d] of [['today',t0],['tomorrow',t1]])for(const m of ALL.filter(x=>same(x.kickoff,d)).sort((a,b)=>a.kickoff-b.kickoff)){const P=zzPredict(m);L.push({dk,d,m,P,it:P.loading?null:zzItem(m,P)})}
+ for(const [dk,d] of [['today',t0],['tomorrow',t1]])for(const m of ALL.filter(x=>same(x.kickoff,d)).sort((a,b)=>a.kickoff-b.kickoff)){const P=zzPredict(m);L.push({dk,d,m,P,it:P.loading?null:zzFreeze(zzItem(m,P),m)})}
  return L}
 const zzTM=(m,t)=>{t=nz(t);return !t||nz(m.home).includes(t)||nz(m.away).includes(t)};
 function zzGroups(L){const out=[],skipped=[];
@@ -678,9 +686,8 @@ async function zzDraw(d){
  c.font='800 74px '+ZFN;let nm=d.comp,ln=[nm];if(c.measureText(nm).width>mw){const i=nm.lastIndexOf(' ');ln=i>0?[nm.slice(0,i),nm.slice(i+1)]:[nm]}
  let fs=ln.length>1?66:74;do{c.font='800 '+fs+'px '+ZFN;fs-=2}while(Math.max(...ln.map(t=>c.measureText(t).width))>mw&&fs>28);
  ln.forEach((t,i)=>T(t,cx,ln.length>1?58+i*62:84,c.font,ACC,'center'));
- if(d.pages>1)T('affiche '+d.page+'/'+d.pages,cx,152,'800 20px '+ZBS,ACC,'center');
  // --- bandeau « PRONOSTICS DU JOUR »
- {const bx=330,by=184,bw=450,bh=72,txt=arch?'HISTORIQUE DES PRONOSTICS':d.dk==='today'?'PRONOSTICS DU JOUR':'PRONOSTICS DE DEMAIN';c.beginPath();c.moveTo(bx+16,by+6);for(let i=0;i<=12;i++)c.lineTo(bx+16+(bw-44)*i/12,by+(i%2?1:8));c.lineTo(bx+bw-6,by+4);c.lineTo(bx+bw,by+bh*.42);c.lineTo(bx+bw-16,by+bh*.72);c.lineTo(bx+bw-4,by+bh-5);for(let i=12;i>=0;i--)c.lineTo(bx+16+(bw-44)*i/12,by+bh-(i%2?2:9));c.lineTo(bx+4,by+bh-5);c.lineTo(bx,by+bh*.58);c.lineTo(bx+12,by+bh*.28);c.closePath();c.fillStyle=ACC;c.fill();
+ {const bx=330,by=184,bw=450,bh=72,txt=(arch?'HISTORIQUE DES PRONOSTICS':d.dk==='today'?'PRONOSTICS DU JOUR':'PRONOSTICS DE DEMAIN')+(d.pages>1?'  ·  '+d.page+'/'+d.pages:'');c.beginPath();c.moveTo(bx+16,by+6);for(let i=0;i<=12;i++)c.lineTo(bx+16+(bw-44)*i/12,by+(i%2?1:8));c.lineTo(bx+bw-6,by+4);c.lineTo(bx+bw,by+bh*.42);c.lineTo(bx+bw-16,by+bh*.72);c.lineTo(bx+bw-4,by+bh-5);for(let i=12;i>=0;i--)c.lineTo(bx+16+(bw-44)*i/12,by+bh-(i%2?2:9));c.lineTo(bx+4,by+bh-5);c.lineTo(bx,by+bh*.58);c.lineTo(bx+12,by+bh*.28);c.closePath();c.fillStyle=ACC;c.fill();
   let f=50;do{c.font='italic 800 '+f+'px '+ZFN;f-=2}while(c.measureText(txt).width>bw-90&&f>22);T(txt,bx+bw/2,by+bh/2+2,c.font,'#fff','center')}
  T('TOUS LES MATCHS   ·   TOUS LES CHAMPIONNATS   ·   UNE SEULE PASSION',610,288,'700 13px '+ZBS,'#16213e','center');
  // --- date et drapeau

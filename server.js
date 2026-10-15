@@ -167,10 +167,10 @@ async function euBuild(key) {
       } catch {}
     }));
     const per = {}, evs = Object.values(S.events).sort((a, b) => new Date(a.date) - new Date(b.date));
-    for (const e of evs) for (const [me, op] of [[e.h, e.a], [e.a, e.h]]) (per[me.id] = per[me.id] || { id: me.id, n: me.n, s: me.s, list: [] }).list.push({ f: me.g, c: op.g, st: (S.sum[e.id] || {})[me.id] });
+    for (const e of evs) for (const [me, op] of [[e.h, e.a], [e.a, e.h]]) (per[me.id] = per[me.id] || { id: me.id, n: me.n, s: me.s, list: [] }).list.push({ d: e.date, f: me.g, c: op.g, st: (S.sum[e.id] || {})[me.id] });
     const teams = Object.values(per).map(t => {
       const L = t.list.slice(-8), X = L.filter(x => x.st && x.st.sh != null), avg = k => { const v = X.map(x => x.st[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
-      return { id: t.id, n: t.n, s: t.s, m: L.length, ms: X.length, yc: avg("yc"), sh: avg("sh"), fo: avg("fo"), co: avg("co"), form: L.slice(-5).map(x => x.f > x.c ? "V" : x.f < x.c ? "D" : "N").join(""), bm: L.reduce((a, x) => a + x.f, 0) / L.length, be: L.reduce((a, x) => a + x.c, 0) / L.length };
+      return { L: t.list.map(x => ({ d: x.d, f: x.f, c: x.c, sh: x.st && x.st.sh, co: x.st && x.st.co, fo: x.st && x.st.fo, yc: x.st && x.st.yc })), id: t.id, n: t.n, s: t.s, m: L.length, ms: X.length, yc: avg("yc"), sh: avg("sh"), fo: avg("fo"), co: avg("co"), form: L.slice(-5).map(x => x.f > x.c ? "V" : x.f < x.c ? "D" : "N").join(""), bm: L.reduce((a, x) => a + x.f, 0) / L.length, be: L.reduce((a, x) => a + x.c, 0) / L.length };
     });
     S.v = { teams, matches: evs.map(e => ({ d: e.date, h: e.h.n, a: e.a.n, hg: e.h.g, ag: e.a.g })), events: evs.length, withStats: Object.values(S.sum).filter(o => Object.values(o).some(x => x.sh != null)).length, built: Date.now() };
     S.t = Date.now();
